@@ -1,0 +1,27 @@
+#ifndef CS3113_H
+#define CS3113_H
+
+#include "raylib.h"
+#include "rlgl.h"
+#include "raymath.h"
+#include <iostream>
+#include <math.h>
+#include <time.h>
+#include <stdio.h>
+#include <map>
+#include <vector>
+#include <string>
+
+#define LOG(argument) std::cout << argument << '\n'
+
+enum AppStatus   { TERMINATED, RUNNING };
+enum TextureType { SINGLE, ATLAS       };
+// NO_SCENE is a distinct sentinel so scene ID zero remains a valid destination.
+enum SceneID     { NO_SCENE = -1, LEVEL_A, LEVEL_B };
+
+Color     ColorFromHex(const char *hex);
+void      Normalise(Vector2 *vector);
+float     GetLength(const Vector2 vector);
+Rectangle getUVRectangle(const Texture2D *texture, int index, int rows, int cols);
+
+#endif // CS3113_H
