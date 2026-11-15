@@ -49,6 +49,28 @@ void drawAtGround(Texture2D texture, float centerX, float groundY, float scale)
         height
     });
 }
+
+void drawHuntressFrame(
+    Texture2D texture,
+    int frame,
+    Vector2 position,
+    Vector2 scale,
+    Direction direction
+)
+{
+    const int frameCount = texture.width / texture.height;
+    Rectangle source = getUVRectangle(&texture, frame, 1, frameCount);
+    if (direction == LEFT) source.width *= -1.0f;
+
+    DrawTexturePro(
+        texture,
+        source,
+        { position.x, position.y, scale.x, scale.y },
+        { scale.x / 2.0f, scale.y / 2.0f },
+        0.0f,
+        WHITE
+    );
+}
 }
 
 // The default and configured constructors pass this scene's coordinate
@@ -79,6 +101,12 @@ void LevelA::initialise()
     mRedBirch = LoadTexture("assets/Tiles and Background/Red Birch.png");
     mSmallTent = LoadTexture("assets/Tiles and Background/Small Tent.png");
     mAngelStatue = LoadTexture("assets/Tiles and Background/Angel Statue.png");
+    mHuntressIdle = LoadTexture("assets/Huntress/Idle.png");
+    mHuntressRun = LoadTexture("assets/Huntress/Run.png");
+    mHuntressJump = LoadTexture("assets/Huntress/Jump.png");
+    mHuntressFall = LoadTexture("assets/Huntress/Fall.png");
+    mHuntressAttackOne = LoadTexture("assets/Huntress/Attack1.png");
+    mHuntressAttackTwo = LoadTexture("assets/Huntress/Attack2.png");
 
     buildLevelData();
     mGameState.map = new Map(
@@ -125,8 +153,26 @@ void LevelA::initialise()
     };
     mGameState.player->setPosition(mPlayerStartPosition);
     mGameState.player->setJumpingPower(520.0f);
-    mGameState.player->setColliderDimensions({ 36.0f, 56.0f });
+    mGameState.player->setColliderDimensions({ 30.0f, 40.0f });
+    mGameState.player->setColliderOffset({ -4.0f, 20.0f });
     mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
+
+    mHuntress = new Entity();
+    mHuntress->setScale({ 150.0f, 150.0f });
+    mHuntress->setColliderDimensions({ 44.0f, 58.0f });
+    mHuntressStartPosition = {
+        mGameState.map->getLeftBoundary() +
+            LEVEL_A_MAP_COLUMNS * 0.25f * LEVEL_A_TILE_SIZE,
+        groundY - mHuntress->getColliderDimensions().y / 2.0f
+    };
+    mHuntress->setPosition(mHuntressStartPosition);
+    mHuntress->setEntityType(NPC);
+    mHuntress->setAIType(FOLLOWER);
+    mHuntress->setAIState(IDLE);
+    mHuntress->setDirection(LEFT);
+    mHuntress->setSpeed(220);
+    mHuntress->setJumpingPower(520.0f);
+    mHuntress->setAcceleration({ 0.0f, SCENE_GRAVITY });
 }
 
 void LevelA::buildLevelData()
@@ -178,6 +224,169 @@ void LevelA::update(float deltaTime)
         mGameState.player->setVelocity({ 0.0f, 0.0f });
         mGameState.player->setMovement({ 0.0f, 0.0f });
     }
+
+    updateHuntress(deltaTime);
+}
+
+void LevelA::updateHuntress(float deltaTime)
+{
+    const bool isAttacking =
+        mHuntressAnimation == HUNTRESS_ATTACK_ONE ||
+        mHuntressAnimation == HUNTRESS_ATTACK_TWO;
+
+    if (isAttacking)
+        mHuntress->setMovement({ 0.0f, 0.0f });
+    else if (mHuntress->getAIState() == FOLLOWING &&
+             mHuntress->isCollidingBottom())
+    {
+        const float direction =
+            mHuntress->getDirection() == LEFT ? -1.0f : 1.0f;
+        const Vector2 position = mHuntress->getPosition();
+        const Vector2 collider = mHuntress->getColliderDimensions();
+        const Vector2 groundAhead = {
+            position.x + direction *
+                (collider.x / 2.0f + LEVEL_A_TILE_SIZE / 2.0f),
+            position.y + collider.y / 2.0f + 2.0f
+        };
+        float xOverlap = 0.0f;
+        float yOverlap = 0.0f;
+        const bool hasGroundAhead = mGameState.map->isSolidTileAt(
+            groundAhead,
+            &xOverlap,
+            &yOverlap
+        );
+        const bool playerIsAbove =
+            mGameState.player->getPosition().y < position.y - 40.0f;
+
+        if (playerIsAbove || !hasGroundAhead)
+        {
+            mHuntress->jump();
+            PlaySound(mGameState.jumpSound);
+        }
+    }
+
+    mHuntress->update(
+        deltaTime,
+        isAttacking ? nullptr : mGameState.player,
+        mGameState.map,
+        nullptr,
+        0
+    );
+
+    if (mHuntress->getPosition().y > SCENE_FALL_THRESHOLD)
+    {
+        mHuntress->setPosition(mHuntressStartPosition);
+        mHuntress->setVelocity({ 0.0f, 0.0f });
+        mHuntress->setMovement({ 0.0f, 0.0f });
+        setHuntressAnimation(HUNTRESS_IDLE);
+    }
+
+    const bool isFollowing =
+        mHuntress->getAIState() == FOLLOWING ||
+        mHuntress->getAIState() == WALKING;
+    const bool isNearPlayer = isFollowing &&
+        Vector2Distance(
+            mHuntress->getPosition(),
+            mGameState.player->getPosition()
+        ) < 130.0f;
+
+    if (isAttacking)
+    {
+        if (!mHuntressAnimationFinished)
+        {
+            animateHuntress(deltaTime);
+            return;
+        }
+
+        if (isNearPlayer)
+        {
+            setHuntressAnimation(
+                mHuntressAttackTwoNext
+                    ? HUNTRESS_ATTACK_TWO
+                    : HUNTRESS_ATTACK_ONE
+            );
+            mHuntressAttackTwoNext = !mHuntressAttackTwoNext;
+        }
+        else
+            setHuntressAnimation(
+                getHuntressMovementAnimation(isFollowing)
+            );
+        return;
+    }
+
+    if (isNearPlayer)
+    {
+        setHuntressAnimation(
+            mHuntressAttackTwoNext ? HUNTRESS_ATTACK_TWO : HUNTRESS_ATTACK_ONE
+        );
+        mHuntressAttackTwoNext = !mHuntressAttackTwoNext;
+    }
+    else
+        setHuntressAnimation(getHuntressMovementAnimation(isFollowing));
+
+    animateHuntress(deltaTime);
+}
+
+void LevelA::setHuntressAnimation(HuntressAnimation animation)
+{
+    if (mHuntressAnimation == animation) return;
+
+    mHuntressAnimation = animation;
+    mHuntressAnimationFrame = 0;
+    mHuntressAnimationTime = 0.0f;
+    mHuntressAnimationFinished = false;
+}
+
+LevelA::HuntressAnimation LevelA::getHuntressMovementAnimation(
+    bool isFollowing
+) const
+{
+    if (!isFollowing) return HUNTRESS_IDLE;
+
+    const float verticalVelocity = mHuntress->getVelocity().y;
+    if (verticalVelocity < -1.0f) return HUNTRESS_JUMP;
+    if (verticalVelocity > 1.0f) return HUNTRESS_FALL;
+    if (GetLength(mHuntress->getMovement()) > 0.0f) return HUNTRESS_RUN;
+
+    return HUNTRESS_IDLE;
+}
+
+Texture2D LevelA::getHuntressAnimationTexture() const
+{
+    switch (mHuntressAnimation)
+    {
+    case HUNTRESS_RUN: return mHuntressRun;
+    case HUNTRESS_JUMP: return mHuntressJump;
+    case HUNTRESS_FALL: return mHuntressFall;
+    case HUNTRESS_ATTACK_ONE: return mHuntressAttackOne;
+    case HUNTRESS_ATTACK_TWO: return mHuntressAttackTwo;
+    case HUNTRESS_IDLE:
+    default: return mHuntressIdle;
+    }
+}
+
+void LevelA::animateHuntress(float deltaTime)
+{
+    const Texture2D texture = getHuntressAnimationTexture();
+    const int frameCount = texture.width / texture.height;
+    const float secondsPerFrame =
+        1.0f / static_cast<float>(Entity::DEFAULT_FRAME_SPEED);
+
+    mHuntressAnimationTime += deltaTime;
+    while (mHuntressAnimationTime >= secondsPerFrame)
+    {
+        mHuntressAnimationTime -= secondsPerFrame;
+        if (mHuntressAnimationFrame + 1 < frameCount)
+            mHuntressAnimationFrame++;
+        else if (mHuntressAnimation == HUNTRESS_ATTACK_ONE ||
+                 mHuntressAnimation == HUNTRESS_ATTACK_TWO)
+        {
+            mHuntressAnimationFinished = true;
+            break;
+        }
+        else
+            mHuntressAnimationFrame = 0;
+    }
 }
 
 void LevelA::render()
@@ -217,13 +426,35 @@ void LevelA::render()
     drawAtGround(mSmallTent, mapLeft + 58.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
     drawAtGround(mBlueBirch, mapLeft + 70.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
 
+    renderHuntress();
     mGameState.player->render();
+}
+
+void LevelA::renderHuntress()
+{
+    const Texture2D texture = getHuntressAnimationTexture();
+    // The sprite sheets leave transparent space below the Huntress.
+    const float spriteFootY = 96.0f;
+    Vector2 renderPosition = mHuntress->getPosition();
+    renderPosition.y += mHuntress->getColliderDimensions().y / 2.0f +
+        mHuntress->getScale().y / 2.0f -
+        spriteFootY * mHuntress->getScale().y / texture.height;
+
+    drawHuntressFrame(
+        texture,
+        mHuntressAnimationFrame,
+        renderPosition,
+        mHuntress->getScale(),
+        mHuntress->getDirection()
+    );
 }
 
 void LevelA::shutdown()
 {
     // Clearing each resource after releasing it makes this safe to call when
     // switching scenes and again from the destructor.
+    delete mHuntress;
+    mHuntress = nullptr;
     delete mGameState.player;
     mGameState.player = nullptr;
     delete mGameState.map;
@@ -241,6 +472,18 @@ void LevelA::shutdown()
     mSmallTent = {};
     UnloadTexture(mAngelStatue);
     mAngelStatue = {};
+    UnloadTexture(mHuntressIdle);
+    mHuntressIdle = {};
+    UnloadTexture(mHuntressRun);
+    mHuntressRun = {};
+    UnloadTexture(mHuntressJump);
+    mHuntressJump = {};
+    UnloadTexture(mHuntressFall);
+    mHuntressFall = {};
+    UnloadTexture(mHuntressAttackOne);
+    mHuntressAttackOne = {};
+    UnloadTexture(mHuntressAttackTwo);
+    mHuntressAttackTwo = {};
 
     UnloadMusicStream(mGameState.bgm);
     mGameState.bgm = {};

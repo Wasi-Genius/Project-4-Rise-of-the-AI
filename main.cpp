@@ -10,8 +10,7 @@ constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 
 constexpr Vector2 ORIGIN = {
     SCREEN_WIDTH / 2.0f,
-    SCREEN_HEIGHT / 2.0f
-};
+    SCREEN_HEIGHT / 2.0f};
 
 AppStatus gAppStatus = RUNNING;
 float gPreviousTicks = 0.0f;
@@ -39,8 +38,8 @@ void switchToScene(Scene *scene)
     gCurrentScene->initialise();
     Entity *player = gCurrentScene->getState().player;
     gCamera.target = player != nullptr
-        ? Vector2{ player->getPosition().x, ORIGIN.y }
-        : gCurrentScene->getOrigin();
+                         ? Vector2{player->getPosition().x, ORIGIN.y}
+                         : gCurrentScene->getOrigin();
 }
 
 void initialise()
@@ -73,8 +72,10 @@ void processInput()
     {
         player->resetMovement();
 
-        if      (IsKeyDown(KEY_A)) player->moveLeft();
-        else if (IsKeyDown(KEY_D)) player->moveRight();
+        if (IsKeyDown(KEY_A))
+            player->moveLeft();
+        else if (IsKeyDown(KEY_D))
+            player->moveRight();
 
         if (IsKeyPressed(KEY_W) && player->isCollidingBottom())
         {
@@ -113,8 +114,7 @@ void update()
         {
             gCamera.target = {
                 player->getPosition().x,
-                ORIGIN.y
-            };
+                ORIGIN.y};
         }
     }
 

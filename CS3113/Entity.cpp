@@ -99,10 +99,14 @@ void Entity::checkCollisionY(
 
         if (isColliding(collidableEntity))
         {
+            const Vector2 position = getColliderPosition();
+            const Vector2 otherPosition =
+                collidableEntity->getColliderPosition();
+
             // STEP 2: Calculate the distance between its centre and our centre
             //         and use that to calculate the amount of overlap between
             //         both bodies.
-            float yDistance = fabs(mPosition.y - collidableEntity->mPosition.y);
+            float yDistance = fabs(position.y - otherPosition.y);
             float yOverlap  = fabs(
                 yDistance - (mColliderDimensions.y / 2.0f) -
                 (collidableEntity->mColliderDimensions.y / 2.0f)
@@ -136,12 +140,16 @@ void Entity::checkCollisionX(
 
         if (isColliding(collidableEntity))
         {
+            const Vector2 position = getColliderPosition();
+            const Vector2 otherPosition =
+                collidableEntity->getColliderPosition();
+
             // When standing on a platform, we're always slightly overlapping
             // it vertically due to gravity, which causes false horizontal
             // collision detections. So the solution I found is only resolve X
             // collisions if there's significant Y overlap, preventing the
             // platform we're standing on from acting like a wall.
-            float yDistance = fabs(mPosition.y - collidableEntity->mPosition.y);
+            float yDistance = fabs(position.y - otherPosition.y);
             float yOverlap  = fabs(
                 yDistance - (mColliderDimensions.y / 2.0f) -
                 (collidableEntity->mColliderDimensions.y / 2.0f)
@@ -150,7 +158,7 @@ void Entity::checkCollisionX(
             // Skip if barely touching vertically (standing on platform)
             if (yOverlap < Y_COLLISION_THRESHOLD) continue;
 
-            float xDistance = fabs(mPosition.x - collidableEntity->mPosition.x);
+            float xDistance = fabs(position.x - otherPosition.x);
             float xOverlap  = fabs(
                 xDistance - (mColliderDimensions.x / 2.0f) -
                 (collidableEntity->mColliderDimensions.x / 2.0f)
@@ -180,28 +188,29 @@ void Entity::checkCollisionY(Map *map)
 {
     if (map == nullptr) return;
 
+    const Vector2 position = getColliderPosition();
     Vector2 topCentreProbe = {
-        mPosition.x, mPosition.y - (mColliderDimensions.y / 2.0f)
+        position.x, position.y - (mColliderDimensions.y / 2.0f)
     };
     Vector2 topLeftProbe = {
-        mPosition.x - (mColliderDimensions.x / 2.0f),
-        mPosition.y - (mColliderDimensions.y / 2.0f)
+        position.x - (mColliderDimensions.x / 2.0f),
+        position.y - (mColliderDimensions.y / 2.0f)
     };
     Vector2 topRightProbe = {
-        mPosition.x + (mColliderDimensions.x / 2.0f),
-        mPosition.y - (mColliderDimensions.y / 2.0f)
+        position.x + (mColliderDimensions.x / 2.0f),
+        position.y - (mColliderDimensions.y / 2.0f)
     };
 
     Vector2 bottomCentreProbe = {
-        mPosition.x, mPosition.y + (mColliderDimensions.y / 2.0f)
+        position.x, position.y + (mColliderDimensions.y / 2.0f)
     };
     Vector2 bottomLeftProbe = {
-        mPosition.x - (mColliderDimensions.x / 2.0f),
-        mPosition.y + (mColliderDimensions.y / 2.0f)
+        position.x - (mColliderDimensions.x / 2.0f),
+        position.y + (mColliderDimensions.y / 2.0f)
     };
     Vector2 bottomRightProbe = {
-        mPosition.x + (mColliderDimensions.x / 2.0f),
-        mPosition.y + (mColliderDimensions.y / 2.0f)
+        position.x + (mColliderDimensions.x / 2.0f),
+        position.y + (mColliderDimensions.y / 2.0f)
     };
 
     float xOverlap = 0.0f;
@@ -234,28 +243,29 @@ void Entity::checkCollisionX(Map *map)
 {
     if (map == nullptr) return;
 
+    const Vector2 position = getColliderPosition();
     Vector2 leftCentreProbe = {
-        mPosition.x - (mColliderDimensions.x / 2.0f), mPosition.y
+        position.x - (mColliderDimensions.x / 2.0f), position.y
     };
     Vector2 leftTopProbe = {
-        mPosition.x - (mColliderDimensions.x / 2.0f),
-        mPosition.y - (mColliderDimensions.y / 2.0f)
+        position.x - (mColliderDimensions.x / 2.0f),
+        position.y - (mColliderDimensions.y / 2.0f)
     };
     Vector2 leftBottomProbe = {
-        mPosition.x - (mColliderDimensions.x / 2.0f),
-        mPosition.y + (mColliderDimensions.y / 2.0f)
+        position.x - (mColliderDimensions.x / 2.0f),
+        position.y + (mColliderDimensions.y / 2.0f)
     };
 
     Vector2 rightCentreProbe = {
-        mPosition.x + (mColliderDimensions.x / 2.0f), mPosition.y
+        position.x + (mColliderDimensions.x / 2.0f), position.y
     };
     Vector2 rightTopProbe = {
-        mPosition.x + (mColliderDimensions.x / 2.0f),
-        mPosition.y - (mColliderDimensions.y / 2.0f)
+        position.x + (mColliderDimensions.x / 2.0f),
+        position.y - (mColliderDimensions.y / 2.0f)
     };
     Vector2 rightBottomProbe = {
-        mPosition.x + (mColliderDimensions.x / 2.0f),
-        mPosition.y + (mColliderDimensions.y / 2.0f)
+        position.x + (mColliderDimensions.x / 2.0f),
+        position.y + (mColliderDimensions.y / 2.0f)
     };
 
     float xOverlap = 0.0f;
@@ -298,9 +308,11 @@ bool Entity::isColliding(Entity *other) const
 {
     if (!other->isActive() || other == this) return false;
 
-    float xDistance = fabs(mPosition.x - other->getPosition().x) -
+    const Vector2 position = getColliderPosition();
+    const Vector2 otherPosition = other->getColliderPosition();
+    float xDistance = fabs(position.x - otherPosition.x) -
         ((mColliderDimensions.x + other->getColliderDimensions().x) / 2.0f);
-    float yDistance = fabs(mPosition.y - other->getPosition().y) -
+    float yDistance = fabs(position.y - otherPosition.y) -
         ((mColliderDimensions.y + other->getColliderDimensions().y) / 2.0f);
 
     return xDistance < 0.0f && yDistance < 0.0f;
@@ -352,9 +364,10 @@ void Entity::animateTurnAround(float deltaTime)
 void Entity::displayCollider()
 {
     // draw the collision box
+    const Vector2 position = getColliderPosition();
     Rectangle colliderBox = {
-        mPosition.x - mColliderDimensions.x / 2.0f,
-        mPosition.y - mColliderDimensions.y / 2.0f,
+        position.x - mColliderDimensions.x / 2.0f,
+        position.y - mColliderDimensions.y / 2.0f,
         mColliderDimensions.x,
         mColliderDimensions.y
     };
@@ -375,15 +388,16 @@ void Entity::AIWander()
 
 void Entity::AIFollow(Entity *target)
 {
+    if (target == nullptr) return;
+
     switch (mAIState)
     {
     case IDLE:
-        // If the player approaches...
         if (Vector2Distance(mPosition, target->getPosition()) < 250.0f)
-            // Switch to walking
-            mAIState = WALKING;
+            mAIState = FOLLOWING;
         break;
     case WALKING:
+    case FOLLOWING:
         // Depending on where the player is in respect to their x-position
         // change direction of the NPC
         if (mPosition.x > target->getPosition().x)

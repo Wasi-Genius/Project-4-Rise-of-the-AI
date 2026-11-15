@@ -19,6 +19,7 @@ private:
 
     Vector2 mScale;
     Vector2 mColliderDimensions;
+    Vector2 mColliderOffset{ 0.0f, 0.0f };
 
     Texture2D   mTexture;
     Texture2D   mTurnAroundTexture{};
@@ -57,6 +58,15 @@ private:
     AIState mAIState;
 
     bool isColliding(Entity *other) const;
+    Vector2 getColliderPosition() const
+    {
+        return {
+            mPosition.x + (mDirection == LEFT
+                ? -mColliderOffset.x
+                : mColliderOffset.x),
+            mPosition.y + mColliderOffset.y
+        };
+    }
 
     void checkCollisionY(Entity *collidableEntities, int collisionCheckCount);
     void checkCollisionY(Map *map);
@@ -170,6 +180,8 @@ public:
     );
     void setColliderDimensions(Vector2 newDimensions)
         { mColliderDimensions = newDimensions;     }
+    void setColliderOffset(Vector2 newOffset)
+        { mColliderOffset = newOffset;             }
     void setSpriteSheetDimensions(Vector2 newDimensions)
         { mSpriteSheetDimensions = newDimensions;  }
     void setSpeed(int newSpeed)
