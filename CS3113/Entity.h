@@ -21,18 +21,25 @@ private:
     Vector2 mColliderDimensions;
 
     Texture2D   mTexture;
+    Texture2D   mTurnAroundTexture{};
     TextureType mTextureType;
     Vector2     mSpriteSheetDimensions;
+    Vector2     mTurnAroundSpriteSheetDimensions{};
 
     std::map<Direction, std::vector<int>> mAnimationAtlas;
     std::vector<int>                      mAnimationIndices;
+    std::vector<int>                      mTurnAroundAnimationFrames;
     Direction                             mDirection;
     int                                   mFrameSpeed;
 
     int   mCurrentFrameIndex = 0;
+    int   mTurnAroundFrameIndex = 0;
     float mAnimationTime     = 0.0f;
+    float mTurnAroundAnimationTime = 0.0f;
 
     bool  mIsJumping    = false;
+    bool  mIsTurningAround = false;
+    bool  mFlipWithDirection = false;
     float mJumpingPower = 0.0f;
 
     int   mSpeed;
@@ -66,6 +73,8 @@ private:
     }
 
     void animate(float deltaTime);
+    void animateTurnAround(float deltaTime);
+    void startTurnAround();
     void AIActivate(Entity *target);
     void AIWander();
     void AIFollow(Entity *target);
@@ -113,8 +122,8 @@ public:
 
     void moveUp()    { mMovement.y = -1; mDirection = UP;    }
     void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
-    void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
-    void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
+    void moveLeft()  { mMovement.x = -1; setDirection(LEFT);  }
+    void moveRight() { mMovement.x =  1; setDirection(RIGHT); }
 
     void resetMovement() { mMovement = { 0.0f, 0.0f }; }
 
@@ -154,6 +163,11 @@ public:
         { mScale = newScale;                       }
     void setTexture(const char *textureFilepath)
         { mTexture = LoadTexture(textureFilepath); }
+    void setTurnAroundAnimation(
+        const char *textureFilepath,
+        Vector2 spriteSheetDimensions,
+        std::vector<int> animationFrames
+    );
     void setColliderDimensions(Vector2 newDimensions)
         { mColliderDimensions = newDimensions;     }
     void setSpriteSheetDimensions(Vector2 newDimensions)
@@ -174,6 +188,11 @@ public:
         { mAIType = newType;                       }
     void setDirection(Direction newDirection)
     {
+        if (mFlipWithDirection &&
+            ((mDirection == LEFT && newDirection == RIGHT) ||
+             (mDirection == RIGHT && newDirection == LEFT)))
+            startTurnAround();
+
         mDirection = newDirection;
 
         if (mTextureType == ATLAS)

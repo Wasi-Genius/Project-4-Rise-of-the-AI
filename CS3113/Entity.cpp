@@ -45,7 +45,33 @@ Entity::Entity(
     mAngle{ 0.0f }, mEntityType{ entityType }, mAIType{ WANDERER },
     mAIState{ IDLE } {}
 
-Entity::~Entity() { UnloadTexture(mTexture); }
+Entity::~Entity()
+{
+    UnloadTexture(mTexture);
+    UnloadTexture(mTurnAroundTexture);
+}
+
+void Entity::setTurnAroundAnimation(
+    const char *textureFilepath,
+    Vector2 spriteSheetDimensions,
+    std::vector<int> animationFrames
+)
+{
+    UnloadTexture(mTurnAroundTexture);
+    mTurnAroundTexture = LoadTexture(textureFilepath);
+    mTurnAroundSpriteSheetDimensions = spriteSheetDimensions;
+    mTurnAroundAnimationFrames = animationFrames;
+    mFlipWithDirection = true;
+}
+
+void Entity::startTurnAround()
+{
+    if (mTurnAroundAnimationFrames.empty()) return;
+
+    mIsTurningAround = true;
+    mTurnAroundFrameIndex = 0;
+    mTurnAroundAnimationTime = 0.0f;
+}
 
 /**
  * Iterates through a list of collidable entities, checks for collisions with
@@ -301,6 +327,28 @@ void Entity::animate(float deltaTime)
     }
 }
 
+void Entity::animateTurnAround(float deltaTime)
+{
+    mTurnAroundAnimationTime += deltaTime;
+    const float secondsPerFrame = 1.0f / mFrameSpeed;
+
+    while (mTurnAroundAnimationTime >= secondsPerFrame && mIsTurningAround)
+    {
+        mTurnAroundAnimationTime -= secondsPerFrame;
+        mTurnAroundFrameIndex++;
+
+        if (mTurnAroundFrameIndex >=
+            static_cast<int>(mTurnAroundAnimationFrames.size()))
+        {
+            mIsTurningAround = false;
+            mTurnAroundFrameIndex = 0;
+            mTurnAroundAnimationTime = 0.0f;
+            mCurrentFrameIndex = 0;
+            mAnimationTime = 0.0f;
+        }
+    }
+}
+
 void Entity::displayCollider()
 {
     // draw the collision box
@@ -400,8 +448,9 @@ void Entity::update(
     checkCollisionX(collidableEntities, collisionCheckCount);
     checkCollisionX(map);
 
-    // Only animate if we're on the ground (not necessary)
-    if (mTextureType == ATLAS && GetLength(mMovement) != 0 &&
+    if (mIsTurningAround)
+        animateTurnAround(deltaTime);
+    else if (mTextureType == ATLAS && GetLength(mMovement) != 0 &&
         mIsCollidingBottom)
         animate(deltaTime);
 }
@@ -411,8 +460,19 @@ void Entity::render()
     if (mEntityStatus == INACTIVE) return;
 
     Rectangle textureArea;
+    Texture2D texture = mTexture;
 
-    switch (mTextureType)
+    if (mIsTurningAround)
+    {
+        texture = mTurnAroundTexture;
+        textureArea = getUVRectangle(
+            &texture,
+            mTurnAroundAnimationFrames[mTurnAroundFrameIndex],
+            mTurnAroundSpriteSheetDimensions.x,
+            mTurnAroundSpriteSheetDimensions.y
+        );
+    }
+    else switch (mTextureType)
     {
     case SINGLE:
         // Whole texture (UV coordinates)
@@ -427,7 +487,7 @@ void Entity::render()
         break;
     case ATLAS:
         textureArea = getUVRectangle(
-            &mTexture,
+            &texture,
             mAnimationIndices[mCurrentFrameIndex],
             mSpriteSheetDimensions.x,
             mSpriteSheetDimensions.y
@@ -436,6 +496,9 @@ void Entity::render()
     default:
         break;
     }
+
+    if (mFlipWithDirection && mDirection == LEFT)
+        textureArea.width *= -1.0f;
 
     // Destination rectangle – centred on mPosition
     Rectangle destinationArea = {
@@ -453,7 +516,7 @@ void Entity::render()
 
     // Render the texture on screen
     DrawTexturePro(
-        mTexture,
+        texture,
         textureArea, destinationArea, originOffset,
         mAngle, WHITE
     );

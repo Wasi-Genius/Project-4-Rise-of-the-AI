@@ -111,6 +111,11 @@ void LevelA::initialise()
         animationAtlas,
         PLAYER
     );
+    mGameState.player->setTurnAroundAnimation(
+        "assets/Protag/_TurnAround.png",
+        { 1, 3 },
+        { 0, 1, 2 }
+    );
 
     const float groundY = mGameState.map->getTopBoundary() +
         15.0f * LEVEL_A_TILE_SIZE;
