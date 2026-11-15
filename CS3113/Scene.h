@@ -44,6 +44,7 @@ public:
     // Return a read-only reference so callers can inspect scene state without
     // copying the owning pointers inside GameState.
     const GameState &getState() const { return mGameState; }
+    void requestSceneChange(SceneID sceneID) { mGameState.nextSceneID = sceneID; }
     Vector2 getOrigin() const { return mOrigin; }
     const char *getBGColourHexCode() const { return mBGColourHexCode; }
 };

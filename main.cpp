@@ -1,8 +1,7 @@
 #include "CS3113/LevelA.h"
 #include "CS3113/LevelB.h"
+#include "CS3113/MenuScene.h"
 
-// The game loop owns window-wide settings. Each Scene owns only its own
-// gameplay state, which is the main idea behind today's scene lesson.
 constexpr int SCREEN_WIDTH = 1000,
               SCREEN_HEIGHT = 600,
               FPS = 120;
@@ -33,16 +32,15 @@ void switchToScene(Scene *scene)
         return;
     }
 
-    // Release the outgoing scene's resources before initialising the next one.
     if (gCurrentScene != nullptr)
         gCurrentScene->shutdown();
 
     gCurrentScene = scene;
     gCurrentScene->initialise();
-    gCamera.target = {
-        gCurrentScene->getState().xochitl->getPosition().x,
-        ORIGIN.y
-    };
+    Entity *player = gCurrentScene->getState().xochitl;
+    gCamera.target = player != nullptr
+        ? Vector2{ player->getPosition().x, ORIGIN.y }
+        : gCurrentScene->getOrigin();
 }
 
 void initialise()
@@ -50,11 +48,11 @@ void initialise()
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Scenes");
     InitAudioDevice();
 
-    // Named keys make the scene collection readable and let scenes request a
-    // destination without relying on fragile numeric array positions.
+    // Named keys make the scene collection readable and let scenes request a destination without relying on fragile numeric array positions.
+    gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#17243A");
     gLevels[LEVEL_A] = new LevelA(ORIGIN, "#C0897E");
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
-    switchToScene(gLevels[LEVEL_A]);
+    switchToScene(gLevels[MAIN_MENU]);
 
     // Camera2D keeps the player horizontally centred while preserving the
     // lesson's fixed vertical camera position.
@@ -70,20 +68,28 @@ void initialise()
 void processInput()
 {
     Entity *player = gCurrentScene->getState().xochitl;
-    player->resetMovement();
 
-    if      (IsKeyDown(KEY_A)) player->moveLeft();
-    else if (IsKeyDown(KEY_D)) player->moveRight();
-
-    if (IsKeyPressed(KEY_W) && player->isCollidingBottom())
+    if (player != nullptr)
     {
-        player->jump();
-        PlaySound(gCurrentScene->getState().jumpSound);
-    }
+        player->resetMovement();
 
-    // Normalising prevents diagonal input from increasing movement speed.
-    if (GetLength(player->getMovement()) > 1.0f)
-        player->normaliseMovement();
+        if      (IsKeyDown(KEY_A)) player->moveLeft();
+        else if (IsKeyDown(KEY_D)) player->moveRight();
+
+        if (IsKeyPressed(KEY_W) && player->isCollidingBottom())
+        {
+            player->jump();
+            PlaySound(gCurrentScene->getState().jumpSound);
+        }
+
+        // Normalising prevents diagonal input from increasing movement speed.
+        if (GetLength(player->getMovement()) > 1.0f)
+            player->normaliseMovement();
+    }
+    else if (IsKeyPressed(KEY_ENTER))
+    {
+        gCurrentScene->requestSceneChange(LEVEL_A);
+    }
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose())
         gAppStatus = TERMINATED;
@@ -91,8 +97,7 @@ void processInput()
 
 void update()
 {
-    // Delta time is elapsed seconds. The accumulator carries any leftover
-    // fraction forward so every physics update uses the same fixed interval.
+    // Delta time is elapsed seconds. The accumulator carries any leftover fraction forward so every physics update uses the same fixed interval.
     const float ticks = static_cast<float>(GetTime());
     float deltaTime = ticks - gPreviousTicks;
     gPreviousTicks = ticks;
@@ -103,11 +108,14 @@ void update()
         gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
 
-        Vector2 playerPosition = {
-            gCurrentScene->getState().xochitl->getPosition().x,
-            ORIGIN.y
-        };
-        gCamera.target = playerPosition;
+        Entity *player = gCurrentScene->getState().xochitl;
+        if (player != nullptr)
+        {
+            gCamera.target = {
+                player->getPosition().x,
+                ORIGIN.y
+            };
+        }
     }
 
     gTimeAccumulator = deltaTime;

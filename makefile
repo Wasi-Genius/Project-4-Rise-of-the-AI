@@ -33,6 +33,10 @@ ifeq ($(wildcard CS3113/Scene.cpp),CS3113/Scene.cpp)
     SRCS += CS3113/Scene.cpp
 endif
 
+ifeq ($(wildcard CS3113/MenuScene.cpp),CS3113/MenuScene.cpp)
+    SRCS += CS3113/MenuScene.cpp
+endif
+
 # Default values
 CXX = g++
 CXXFLAGS = -std=c++11
