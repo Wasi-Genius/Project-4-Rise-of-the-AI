@@ -1,5 +1,56 @@
 #include "LevelA.h"
 
+namespace
+{
+void addPlatform(
+    unsigned int *levelData,
+    int mapColumns,
+    int mapRows,
+    int startColumn,
+    int endColumn,
+    int topRow,
+    int fillRows
+)
+{
+    for (int column = startColumn; column <= endColumn; column++)
+    {
+        unsigned int topTile = 2;
+        if (column == startColumn) topTile = 1;
+        else if (column == endColumn) topTile = 3;
+
+        levelData[topRow * mapColumns + column] = topTile;
+
+        for (int depth = 1; depth <= fillRows && topRow + depth < mapRows; depth++)
+            levelData[(topRow + depth) * mapColumns + column] = 11;
+    }
+}
+
+void drawTexture(Texture2D texture, Rectangle destination)
+{
+    DrawTexturePro(
+        texture,
+        { 0.0f, 0.0f, static_cast<float>(texture.width),
+          static_cast<float>(texture.height) },
+        destination,
+        { 0.0f, 0.0f },
+        0.0f,
+        WHITE
+    );
+}
+
+void drawAtGround(Texture2D texture, float centerX, float groundY, float scale)
+{
+    const float width = texture.width * scale;
+    const float height = texture.height * scale;
+    drawTexture(texture, {
+        centerX - width / 2.0f,
+        groundY - height,
+        width,
+        height
+    });
+}
+}
+
 // The default and configured constructors pass this scene's coordinate
 // origin and background colour to the shared Scene base.
 LevelA::LevelA() : Scene{ { 0.0f, 0.0f }, "#000000" } {}
@@ -14,58 +65,101 @@ LevelA::~LevelA()
 
 void LevelA::initialise()
 {
-    // A scene loads its own audio and map so another level can use different
-    // assets without changing the main game loop.
-    mGameState.bgm = LoadMusicStream("assets/game/04 - Silent Forest.wav");
-    SetMusicVolume(mGameState.bgm, 0.33f);
+    mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 1 BGM.mp3");
+    SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
-    mGameState.jumpSound = LoadSound("assets/game/Dirt Jump.wav");
+    mGameState.jumpSound = LoadSound("assets/Misc. Sound/Jump Sound.mp3");
     mGameState.nextSceneID = NO_SCENE;
 
+    mBackground = LoadTexture(
+        "assets/Tiles and Background/Blue Background.png"
+    );
+    mBlueBirch = LoadTexture("assets/Tiles and Background/Blue Birch.png");
+    mGreenBirch = LoadTexture("assets/Tiles and Background/Green Birch.png");
+    mRedBirch = LoadTexture("assets/Tiles and Background/Red Birch.png");
+    mSmallTent = LoadTexture("assets/Tiles and Background/Small Tent.png");
+    mAngelStatue = LoadTexture("assets/Tiles and Background/Angel Statue.png");
+
+    buildLevelData();
     mGameState.map = new Map(
-        SCENE_MAP_COLUMNS,
-        SCENE_MAP_ROWS,
+        LEVEL_A_MAP_COLUMNS,
+        LEVEL_A_MAP_ROWS,
         mLevelData,
-        "assets/game/tileset.png",
-        SCENE_TILE_SIZE,
-        4,
-        1,
+        "assets/Tiles and Background/Floor Tiles.png",
+        LEVEL_A_TILE_SIZE,
+        9,
+        18,
         mOrigin
     );
 
-    // Each direction maps to frame indices in the character sprite atlas.
+    std::vector<int> runningFrames = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+    };
     std::map<Direction, std::vector<int>> animationAtlas = {
-        { DOWN,  {  0,  1,  2,  3,  4,  5,  6,  7 } },
-        { LEFT,  {  8,  9, 10, 11, 12, 13, 14, 15 } },
-        { UP,    { 24, 25, 26, 27, 28, 29, 30, 31 } },
-        { RIGHT, { 40, 41, 42, 43, 44, 45, 46, 47 } }
+        { DOWN, runningFrames },
+        { LEFT, runningFrames },
+        { UP, runningFrames },
+        { RIGHT, runningFrames }
     };
 
-    const float sizeRatio = 48.0f / 64.0f;
-    mGameState.xochitl = new Entity(
-        { mOrigin.x - 300.0f, mOrigin.y - 200.0f },
-        { 250.0f * sizeRatio, 250.0f },
-        "assets/game/walk.png",
+    mGameState.player = new Entity(
+        { 0.0f, 0.0f },
+        { 120.0f, 80.0f },
+        "assets/Protag/_Run.png",
         ATLAS,
-        { 6, 8 },
+        { 1, 10 },
         animationAtlas,
         PLAYER
     );
 
-    // Gravity is acceleration in pixels per second squared; the entity uses
-    // this with the fixed timestep supplied by the game loop.
-    mGameState.xochitl->setJumpingPower(550.0f);
-    mGameState.xochitl->setColliderDimensions({
-        mGameState.xochitl->getScale().x / 3.5f,
-        mGameState.xochitl->getScale().y / 3.0f
-    });
-    mGameState.xochitl->setAcceleration({ 0.0f, SCENE_GRAVITY });
+    const float groundY = mGameState.map->getTopBoundary() +
+        15.0f * LEVEL_A_TILE_SIZE;
+    mPlayerStartPosition = {
+        mGameState.map->getLeftBoundary() + 4.0f * LEVEL_A_TILE_SIZE,
+        groundY - mGameState.player->getScale().y / 2.0f
+    };
+    mGameState.player->setPosition(mPlayerStartPosition);
+    mGameState.player->setJumpingPower(520.0f);
+    mGameState.player->setColliderDimensions({ 36.0f, 56.0f });
+    mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
+}
+
+void LevelA::buildLevelData()
+{
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 0, 23, 15, 2
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 27, 83, 15, 2
+    );
+
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 8, 12, 13, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 15, 19, 11, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 22, 26, 12, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 36, 40, 13, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 49, 53, 11, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 62, 66, 13, 0
+    );
+    addPlatform(
+        mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 75, 79, 11, 0
+    );
 }
 
 void LevelA::update(float deltaTime)
 {
     UpdateMusicStream(mGameState.bgm);
-    mGameState.xochitl->update(
+    mGameState.player->update(
         deltaTime,
         nullptr,
         mGameState.map,
@@ -73,26 +167,75 @@ void LevelA::update(float deltaTime)
         0
     );
 
-    // The scene requests a transition; main performs the actual scene switch.
-    if (mGameState.xochitl->getPosition().y > SCENE_FALL_THRESHOLD)
-        mGameState.nextSceneID = LEVEL_B;
+    if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
+    {
+        mGameState.player->setPosition(mPlayerStartPosition);
+        mGameState.player->setVelocity({ 0.0f, 0.0f });
+        mGameState.player->setMovement({ 0.0f, 0.0f });
+    }
 }
 
 void LevelA::render()
 {
     ClearBackground(ColorFromHex(mBGColourHexCode));
+
+    const Vector2 playerPosition = mGameState.player->getPosition();
+    const float backgroundWidth = 2.0f * mOrigin.x;
+    const float backgroundHeight = 2.0f * mOrigin.y;
+    const float backgroundOffset = playerPosition.x * 0.2f;
+    const float backgroundLeft =
+        playerPosition.x - mOrigin.x - backgroundOffset;
+
+    drawTexture(mBackground, {
+        backgroundLeft - backgroundWidth, 0.0f,
+        backgroundWidth, backgroundHeight
+    });
+    drawTexture(mBackground, {
+        backgroundLeft, 0.0f,
+        backgroundWidth, backgroundHeight
+    });
+    drawTexture(mBackground, {
+        backgroundLeft + backgroundWidth, 0.0f,
+        backgroundWidth, backgroundHeight
+    });
+
     mGameState.map->render();
-    mGameState.xochitl->render();
+
+    const float mapLeft = mGameState.map->getLeftBoundary();
+    const float groundY = mGameState.map->getTopBoundary() +
+        15.0f * LEVEL_A_TILE_SIZE;
+    drawAtGround(mBlueBirch, mapLeft + 5.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mGreenBirch, mapLeft + 13.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mSmallTent, mapLeft + 20.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mAngelStatue, mapLeft + 34.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mRedBirch, mapLeft + 45.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mSmallTent, mapLeft + 58.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtGround(mBlueBirch, mapLeft + 70.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+
+    mGameState.player->render();
 }
 
 void LevelA::shutdown()
 {
     // Clearing each resource after releasing it makes this safe to call when
     // switching scenes and again from the destructor.
-    delete mGameState.xochitl;
-    mGameState.xochitl = nullptr;
+    delete mGameState.player;
+    mGameState.player = nullptr;
     delete mGameState.map;
     mGameState.map = nullptr;
+
+    UnloadTexture(mBackground);
+    mBackground = {};
+    UnloadTexture(mBlueBirch);
+    mBlueBirch = {};
+    UnloadTexture(mGreenBirch);
+    mGreenBirch = {};
+    UnloadTexture(mRedBirch);
+    mRedBirch = {};
+    UnloadTexture(mSmallTent);
+    mSmallTent = {};
+    UnloadTexture(mAngelStatue);
+    mAngelStatue = {};
 
     UnloadMusicStream(mGameState.bgm);
     mGameState.bgm = {};

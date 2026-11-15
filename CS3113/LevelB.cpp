@@ -39,7 +39,7 @@ void LevelB::initialise()
     };
 
     const float sizeRatio = 48.0f / 64.0f;
-    mGameState.xochitl = new Entity(
+    mGameState.player = new Entity(
         { mOrigin.x - 300.0f, mOrigin.y - 200.0f },
         { 250.0f * sizeRatio, 250.0f },
         "assets/game/walk.png",
@@ -48,18 +48,18 @@ void LevelB::initialise()
         animationAtlas,
         PLAYER
     );
-    mGameState.xochitl->setJumpingPower(550.0f);
-    mGameState.xochitl->setColliderDimensions({
-        mGameState.xochitl->getScale().x / 3.5f,
-        mGameState.xochitl->getScale().y / 3.0f
+    mGameState.player->setJumpingPower(550.0f);
+    mGameState.player->setColliderDimensions({
+        mGameState.player->getScale().x / 3.5f,
+        mGameState.player->getScale().y / 3.0f
     });
-    mGameState.xochitl->setAcceleration({ 0.0f, SCENE_GRAVITY });
+    mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
 }
 
 void LevelB::update(float deltaTime)
 {
     UpdateMusicStream(mGameState.bgm);
-    mGameState.xochitl->update(
+    mGameState.player->update(
         deltaTime,
         nullptr,
         mGameState.map,
@@ -69,7 +69,7 @@ void LevelB::update(float deltaTime)
 
     // LEVEL_A has value zero and is still a valid destination because the
     // distinct NO_SCENE value is -1 rather than zero.
-    if (mGameState.xochitl->getPosition().y > SCENE_FALL_THRESHOLD)
+    if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
         mGameState.nextSceneID = LEVEL_A;
 }
 
@@ -77,13 +77,13 @@ void LevelB::render()
 {
     ClearBackground(ColorFromHex(mBGColourHexCode));
     mGameState.map->render();
-    mGameState.xochitl->render();
+    mGameState.player->render();
 }
 
 void LevelB::shutdown()
 {
-    delete mGameState.xochitl;
-    mGameState.xochitl = nullptr;
+    delete mGameState.player;
+    mGameState.player = nullptr;
     delete mGameState.map;
     mGameState.map = nullptr;
 

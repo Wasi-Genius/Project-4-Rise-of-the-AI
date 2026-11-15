@@ -37,7 +37,7 @@ void switchToScene(Scene *scene)
 
     gCurrentScene = scene;
     gCurrentScene->initialise();
-    Entity *player = gCurrentScene->getState().xochitl;
+    Entity *player = gCurrentScene->getState().player;
     gCamera.target = player != nullptr
         ? Vector2{ player->getPosition().x, ORIGIN.y }
         : gCurrentScene->getOrigin();
@@ -45,11 +45,11 @@ void switchToScene(Scene *scene)
 
 void initialise()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Scenes");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Knight's Run");
     InitAudioDevice();
 
     // Named keys make the scene collection readable and let scenes request a destination without relying on fragile numeric array positions.
-    gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#17243A");
+    gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#1b4998");
     gLevels[LEVEL_A] = new LevelA(ORIGIN, "#C0897E");
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
     switchToScene(gLevels[MAIN_MENU]);
@@ -67,7 +67,7 @@ void initialise()
 
 void processInput()
 {
-    Entity *player = gCurrentScene->getState().xochitl;
+    Entity *player = gCurrentScene->getState().player;
 
     if (player != nullptr)
     {
@@ -108,7 +108,7 @@ void update()
         gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
 
-        Entity *player = gCurrentScene->getState().xochitl;
+        Entity *player = gCurrentScene->getState().player;
         if (player != nullptr)
         {
             gCamera.target = {

@@ -8,16 +8,19 @@
 class LevelA : public Scene
 {
 private:
-    unsigned int mLevelData[SCENE_MAP_COLUMNS * SCENE_MAP_ROWS] = {
-        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-        4, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4,
-        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 4,
-        4, 2, 2, 2, 0, 0, 0, 2, 2, 2, 3, 3, 3, 4,
-        4, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 3, 4,
-        4, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 3, 4
-    };
+    static constexpr int LEVEL_A_MAP_COLUMNS = 84,
+                         LEVEL_A_MAP_ROWS = 18;
+    static constexpr float LEVEL_A_TILE_SIZE = 32.0f;
+
+    unsigned int mLevelData[LEVEL_A_MAP_COLUMNS * LEVEL_A_MAP_ROWS] = {};
+
+    Texture2D mBackground{};
+    Texture2D mBlueBirch{};
+    Texture2D mGreenBirch{};
+    Texture2D mRedBirch{};
+    Texture2D mSmallTent{};
+    Texture2D mAngelStatue{};
+    Vector2 mPlayerStartPosition{};
 
 public:
     LevelA();
@@ -28,6 +31,9 @@ public:
     void update(float deltaTime) override;
     void render() override;
     void shutdown() override;
+
+private:
+    void buildLevelData();
 };
 
 #endif // LEVEL_A_H

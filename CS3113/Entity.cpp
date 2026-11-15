@@ -291,14 +291,13 @@ void Entity::animate(float deltaTime)
     mAnimationIndices = mAnimationAtlas.at(mDirection);
 
     mAnimationTime += deltaTime;
-    float secondsPerFrame = 1.0f / mFrameSpeed;
+    const float secondsPerFrame = 1.0f / mFrameSpeed;
 
-    if (mAnimationTime >= secondsPerFrame)
+    while (mAnimationTime >= secondsPerFrame)
     {
-        mAnimationTime = 0.0f;
-
-        mCurrentFrameIndex++;
-        mCurrentFrameIndex %= mAnimationIndices.size();
+        mAnimationTime -= secondsPerFrame;
+        mCurrentFrameIndex = (mCurrentFrameIndex + 1) %
+            static_cast<int>(mAnimationIndices.size());
     }
 }
 

@@ -15,7 +15,7 @@ constexpr float SCENE_TILE_SIZE = 75.0f,
 // The next ID is an enum so NO_SCENE cannot be confused with a real level.
 struct GameState
 {
-    Entity *xochitl = nullptr;
+    Entity *player = nullptr;
     Map *map = nullptr;
     Music bgm{};
     Sound jumpSound{};
