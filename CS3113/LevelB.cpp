@@ -70,6 +70,27 @@ void drawAtlasItemAtGround(
         WHITE
     );
 }
+
+void drawWarriorFrame(
+    Texture2D texture,
+    int frame,
+    Vector2 position,
+    Direction direction
+)
+{
+    const int frameCount = texture.width / texture.height;
+    Rectangle source = getUVRectangle(&texture, frame, 1, frameCount);
+    if (direction == LEFT) source.width *= -1.0f;
+
+    DrawTexturePro(
+        texture,
+        source,
+        { position.x - 81.0f, position.y - 81.0f, 162.0f, 162.0f },
+        { 0.0f, 0.0f },
+        0.0f,
+        WHITE
+    );
+}
 }
 
 LevelB::LevelB() : Scene{ { 0.0f, 0.0f }, "#000000" } {}
@@ -84,6 +105,14 @@ LevelB::~LevelB()
 
 void LevelB::initialise()
 {
+    mWarriorAnimation = WARRIOR_IDLE;
+    mWarriorAnimationFrame = 0;
+    mWarriorAnimationTime = 0.0f;
+    mWarriorJumpTime = 0.0f;
+    mWarriorAnimationFinished = false;
+    mWarriorDamageApplied = false;
+    mWarriorAttackTwoNext = false;
+
     mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 2 BGM.mp3");
     SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
@@ -100,6 +129,12 @@ void LevelB::initialise()
     mSmallTent = LoadTexture("assets/Tiles and Background/Small Tent.png");
     mAngelStatue = LoadTexture("assets/Tiles and Background/Angel Statue.png");
     mDecorAtlas = LoadTexture("assets/Tiles and Background/Decor.png");
+    mWarriorIdle = LoadTexture("assets/Warrior/Idle.png");
+    mWarriorRun = LoadTexture("assets/Warrior/Run.png");
+    mWarriorJump = LoadTexture("assets/Warrior/Jump.png");
+    mWarriorFall = LoadTexture("assets/Warrior/Fall.png");
+    mWarriorAttackOne = LoadTexture("assets/Warrior/Attack1.png");
+    mWarriorAttackTwo = LoadTexture("assets/Warrior/Attack2.png");
 
     buildLevelData();
     mGameState.map = new Map(
@@ -155,6 +190,23 @@ void LevelB::initialise()
     mGameState.player->setColliderDimensions({ 30.0f, 40.0f });
     mGameState.player->setColliderOffset({ -4.0f, 20.0f });
     mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
+
+    mWarrior = new Entity();
+    mWarrior->setScale({ 162.0f, 162.0f });
+    mWarrior->setColliderDimensions({ 34.0f, 42.0f });
+    const float warriorGroundY = mGameState.map->getTopBoundary() +
+        17.0f * LEVEL_B_TILE_SIZE;
+    mWarriorStartPosition = {
+        mGameState.map->getLeftBoundary() + 28.0f * LEVEL_B_TILE_SIZE,
+        warriorGroundY - 21.0f
+    };
+    mWarrior->setPosition(mWarriorStartPosition);
+    mWarrior->setEntityType(NPC);
+    mWarrior->setAIType(WANDERER);
+    mWarrior->setDirection(LEFT);
+    mWarrior->setSpeed(150);
+    mWarrior->setJumpingPower(520.0f);
+    mWarrior->setAcceleration({ 0.0f, SCENE_GRAVITY });
 }
 
 void LevelB::buildLevelData()
@@ -242,6 +294,246 @@ void LevelB::update(float deltaTime)
         mGameState.player->setVelocity({ 0.0f, 0.0f });
         mGameState.player->setMovement({ 0.0f, 0.0f });
     }
+
+    updateWarrior(deltaTime);
+}
+
+void LevelB::updateWarrior(float deltaTime)
+{
+    const bool isAttackAnimation =
+        mWarriorAnimation == WARRIOR_ATTACK_ONE ||
+        mWarriorAnimation == WARRIOR_ATTACK_TWO;
+    bool isNearPlayer = mGameState.player->collidesWith(mWarrior);
+
+    if (isAttackAnimation && !isNearPlayer)
+    {
+        mWarrior->setEntityType(NPC);
+        mWarrior->setMovement({ 0.0f, 0.0f });
+        setWarriorAnimation(getWarriorMovementAnimation());
+    }
+
+    const bool isAttacking =
+        mWarriorAnimation == WARRIOR_ATTACK_ONE ||
+        mWarriorAnimation == WARRIOR_ATTACK_TWO;
+
+    if (!isAttacking && isNearPlayer)
+    {
+        if (mGameState.player->getPosition().x < mWarrior->getPosition().x)
+            mWarrior->moveLeft();
+        else
+            mWarrior->moveRight();
+        setWarriorAnimation(
+            mWarriorAttackTwoNext
+                ? WARRIOR_ATTACK_TWO
+                : WARRIOR_ATTACK_ONE
+        );
+        mWarriorAttackTwoNext = !mWarriorAttackTwoNext;
+        mWarrior->setEntityType(NONE);
+        mWarrior->setMovement({ 0.0f, 0.0f });
+    }
+    else if (!isAttacking)
+    {
+        mWarrior->setEntityType(NPC);
+        mWarriorJumpTime += deltaTime;
+
+        if (mWarrior->isCollidingBottom())
+        {
+            const float direction =
+                mWarrior->getDirection() == LEFT ? -1.0f : 1.0f;
+            const Vector2 position = mWarrior->getPosition();
+            const Vector2 collider = mWarrior->getColliderDimensions();
+            const Vector2 groundAhead = {
+                position.x + direction *
+                    (collider.x / 2.0f + LEVEL_B_TILE_SIZE / 2.0f),
+                position.y + collider.y / 2.0f + 2.0f
+            };
+            float xOverlap = 0.0f;
+            float yOverlap = 0.0f;
+            const bool hasGroundAhead = mGameState.map->isSolidTileAt(
+                groundAhead,
+                &xOverlap,
+                &yOverlap
+            );
+
+            if (!hasGroundAhead || mWarriorJumpTime >= 2.5f)
+            {
+                mWarrior->jump();
+                mWarriorJumpTime = 0.0f;
+                PlaySound(mGameState.jumpSound);
+            }
+        }
+    }
+
+    mWarrior->update(
+        deltaTime,
+        nullptr,
+        mGameState.map,
+        nullptr,
+        0
+    );
+
+    if (mWarrior->getPosition().y > SCENE_FALL_THRESHOLD)
+    {
+        mWarrior->setPosition(mWarriorStartPosition);
+        mWarrior->setVelocity({ 0.0f, 0.0f });
+        mWarrior->setMovement({ 0.0f, 0.0f });
+        mWarrior->setEntityType(NPC);
+        setWarriorAnimation(WARRIOR_IDLE);
+        return;
+    }
+
+    isNearPlayer = mGameState.player->collidesWith(mWarrior);
+    const bool isAttackActive =
+        mWarriorAnimation == WARRIOR_ATTACK_ONE ||
+        mWarriorAnimation == WARRIOR_ATTACK_TWO;
+
+    if (isAttackActive && isNearPlayer && !mWarriorDamageApplied)
+    {
+        mWarriorDamageApplied = true;
+        if (gGameProgress.lives > 0)
+        {
+            gGameProgress.lives--;
+            PlaySound(gGameProgress.hurtSound);
+        }
+
+        if (gGameProgress.lives <= 0)
+        {
+            mGameState.nextSceneID = LOSE_SCREEN;
+            return;
+        }
+    }
+
+    if (isAttackActive && !isNearPlayer)
+    {
+        mWarrior->setEntityType(NPC);
+        setWarriorAnimation(getWarriorMovementAnimation());
+    }
+
+    if (mWarriorAnimation == WARRIOR_ATTACK_ONE ||
+        mWarriorAnimation == WARRIOR_ATTACK_TWO)
+    {
+        if (mWarriorAnimationFinished)
+        {
+            if (isNearPlayer)
+            {
+                if (mGameState.player->getPosition().x <
+                    mWarrior->getPosition().x)
+                    mWarrior->moveLeft();
+                else
+                    mWarrior->moveRight();
+                mWarrior->setMovement({ 0.0f, 0.0f });
+                setWarriorAnimation(
+                    mWarriorAttackTwoNext
+                        ? WARRIOR_ATTACK_TWO
+                        : WARRIOR_ATTACK_ONE
+                );
+                mWarriorAttackTwoNext = !mWarriorAttackTwoNext;
+            }
+            else
+            {
+                mWarrior->setEntityType(NPC);
+                setWarriorAnimation(getWarriorMovementAnimation());
+            }
+        }
+        else
+            animateWarrior(deltaTime);
+    }
+    else
+    {
+        if (isNearPlayer)
+        {
+            if (mGameState.player->getPosition().x <
+                mWarrior->getPosition().x)
+                mWarrior->moveLeft();
+            else
+                mWarrior->moveRight();
+            mWarrior->setMovement({ 0.0f, 0.0f });
+            setWarriorAnimation(
+                mWarriorAttackTwoNext
+                    ? WARRIOR_ATTACK_TWO
+                    : WARRIOR_ATTACK_ONE
+            );
+            mWarriorAttackTwoNext = !mWarriorAttackTwoNext;
+            mWarrior->setEntityType(NONE);
+            mWarrior->setMovement({ 0.0f, 0.0f });
+        }
+        else
+            setWarriorAnimation(getWarriorMovementAnimation());
+
+        animateWarrior(deltaTime);
+    }
+}
+
+void LevelB::setWarriorAnimation(WarriorAnimation animation)
+{
+    if (mWarriorAnimation == animation) return;
+
+    if (animation == WARRIOR_ATTACK_ONE ||
+        animation == WARRIOR_ATTACK_TWO)
+        mWarriorDamageApplied = false;
+
+    mWarriorAnimation = animation;
+    mWarriorAnimationFrame = 0;
+    mWarriorAnimationTime = 0.0f;
+    mWarriorAnimationFinished = false;
+}
+
+LevelB::WarriorAnimation LevelB::getWarriorMovementAnimation() const
+{
+    const float verticalVelocity = mWarrior->getVelocity().y;
+    if (verticalVelocity < -1.0f) return WARRIOR_JUMP;
+    if (verticalVelocity > 1.0f) return WARRIOR_FALL;
+    if (GetLength(mWarrior->getMovement()) > 0.0f) return WARRIOR_RUN;
+
+    return WARRIOR_IDLE;
+}
+
+Texture2D LevelB::getWarriorAnimationTexture() const
+{
+    switch (mWarriorAnimation)
+    {
+    case WARRIOR_RUN: return mWarriorRun;
+    case WARRIOR_JUMP: return mWarriorJump;
+    case WARRIOR_FALL: return mWarriorFall;
+    case WARRIOR_ATTACK_ONE: return mWarriorAttackOne;
+    case WARRIOR_ATTACK_TWO: return mWarriorAttackTwo;
+    case WARRIOR_IDLE:
+    default: return mWarriorIdle;
+    }
+}
+
+void LevelB::animateWarrior(float deltaTime)
+{
+    const Texture2D texture = getWarriorAnimationTexture();
+    const int frameCount = texture.width / texture.height;
+    const float secondsPerFrame =
+        1.0f / static_cast<float>(Entity::DEFAULT_FRAME_SPEED);
+
+    mWarriorAnimationTime += deltaTime;
+    while (mWarriorAnimationTime >= secondsPerFrame)
+    {
+        mWarriorAnimationTime -= secondsPerFrame;
+        if (mWarriorAnimationFrame + 1 < frameCount)
+            mWarriorAnimationFrame++;
+        else if (mWarriorAnimation == WARRIOR_ATTACK_ONE ||
+                 mWarriorAnimation == WARRIOR_ATTACK_TWO)
+        {
+            mWarriorAnimationFinished = true;
+            break;
+        }
+        else
+            mWarriorAnimationFrame = 0;
+    }
+}
+
+void LevelB::renderWarrior()
+{
+    drawWarriorFrame(
+        getWarriorAnimationTexture(),
+        mWarriorAnimationFrame,
+        mWarrior->getPosition(),
+        mWarrior->getDirection()
+    );
 }
 
 void LevelB::render()
@@ -306,6 +598,7 @@ void LevelB::render()
         1.5f
     );
 
+    renderWarrior();
     mGameState.player->render();
     renderHealthBar();
 }
@@ -337,6 +630,8 @@ void LevelB::renderHealthBar()
 
 void LevelB::shutdown()
 {
+    delete mWarrior;
+    mWarrior = nullptr;
     delete mGameState.player;
     mGameState.player = nullptr;
     delete mGameState.map;
@@ -358,6 +653,18 @@ void LevelB::shutdown()
     mAngelStatue = {};
     UnloadTexture(mDecorAtlas);
     mDecorAtlas = {};
+    UnloadTexture(mWarriorIdle);
+    mWarriorIdle = {};
+    UnloadTexture(mWarriorRun);
+    mWarriorRun = {};
+    UnloadTexture(mWarriorJump);
+    mWarriorJump = {};
+    UnloadTexture(mWarriorFall);
+    mWarriorFall = {};
+    UnloadTexture(mWarriorAttackOne);
+    mWarriorAttackOne = {};
+    UnloadTexture(mWarriorAttackTwo);
+    mWarriorAttackTwo = {};
 
     UnloadMusicStream(mGameState.bgm);
     mGameState.bgm = {};

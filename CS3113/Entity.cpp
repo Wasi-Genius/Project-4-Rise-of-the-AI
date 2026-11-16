@@ -416,7 +416,12 @@ void Entity::displayCollider()
 
 void Entity::AIWander()
 {
-    moveLeft();
+    if (mIsCollidingLeft)
+        moveRight();
+    else if (mIsCollidingRight)
+        moveLeft();
+    else if (mMovement.x == 0.0f)
+        moveLeft();
 }
 
 void Entity::AIFollow(Entity *target)
