@@ -11,6 +11,14 @@ constexpr float SCENE_TILE_SIZE = 75.0f,
                 SCENE_GRAVITY = 981.0f,
                 SCENE_FALL_THRESHOLD = 800.0f;
 
+struct GameProgress
+{
+    int lives = 5;
+    Sound hurtSound{};
+};
+
+extern GameProgress gGameProgress;
+
 // A scene groups resources that should exist only while that scene is active.
 // The next ID is an enum so NO_SCENE cannot be confused with a real level.
 struct GameState

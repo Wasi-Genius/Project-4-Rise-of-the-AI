@@ -1,5 +1,7 @@
 #include "Scene.h"
 
+GameProgress gGameProgress;
+
 // The no-argument constructor provides a safe default for scenes that do not
 // need custom world coordinates or a background colour.
 Scene::Scene()

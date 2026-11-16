@@ -1,5 +1,6 @@
 #include "CS3113/LevelA.h"
 #include "CS3113/LevelB.h"
+#include "CS3113/LoseScene.h"
 #include "CS3113/MenuScene.h"
 
 constexpr int SCREEN_WIDTH = 1000,
@@ -46,11 +47,13 @@ void initialise()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Knight's Run");
     InitAudioDevice();
+    gGameProgress.hurtSound = LoadSound("assets/Misc. Sound/Hurt Sound.mp3");
 
     // Named keys make the scene collection readable and let scenes request a destination without relying on fragile numeric array positions.
     gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#1b4998");
     gLevels[LEVEL_A] = new LevelA(ORIGIN, "#C0897E");
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
+    gLevels[LOSE_SCREEN] = new LoseScene(ORIGIN, "#A00000");
     switchToScene(gLevels[MAIN_MENU]);
 
     // Camera2D keeps the player horizontally centred while preserving the
@@ -89,6 +92,7 @@ void processInput()
     }
     else if (IsKeyPressed(KEY_ENTER))
     {
+        gGameProgress.lives = 5;
         gCurrentScene->requestSceneChange(LEVEL_A);
     }
 
@@ -139,6 +143,8 @@ void shutdown()
     gLevels.clear();
     gCurrentScene = nullptr;
 
+    UnloadSound(gGameProgress.hurtSound);
+    gGameProgress.hurtSound = {};
     CloseAudioDevice();
     CloseWindow();
 }

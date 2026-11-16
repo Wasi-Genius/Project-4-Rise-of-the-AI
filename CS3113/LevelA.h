@@ -25,6 +25,7 @@ private:
     unsigned int mLevelData[LEVEL_A_MAP_COLUMNS * LEVEL_A_MAP_ROWS] = {};
 
     Texture2D mBackground{};
+    Texture2D mHealthBar{};
     Texture2D mBlueBirch{};
     Texture2D mGreenBirch{};
     Texture2D mRedBirch{};
@@ -44,6 +45,7 @@ private:
     float mHuntressAnimationTime = 0.0f;
     bool mHuntressAnimationFinished = false;
     bool mHuntressAttackTwoNext = false;
+    bool mHuntressDamageApplied = false;
 
 public:
     LevelA();
@@ -63,6 +65,8 @@ private:
     void animateHuntress(float deltaTime);
     Texture2D getHuntressAnimationTexture() const;
     void renderHuntress();
+    void renderHealthBar();
+    void loseLife();
 };
 
 #endif // LEVEL_A_H

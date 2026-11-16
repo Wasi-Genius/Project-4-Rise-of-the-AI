@@ -87,6 +87,13 @@ LevelA::~LevelA()
 
 void LevelA::initialise()
 {
+    mHuntressAnimation = HUNTRESS_IDLE;
+    mHuntressAnimationFrame = 0;
+    mHuntressAnimationTime = 0.0f;
+    mHuntressAnimationFinished = false;
+    mHuntressAttackTwoNext = false;
+    mHuntressDamageApplied = false;
+
     mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 1 BGM.mp3");
     SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
@@ -96,6 +103,7 @@ void LevelA::initialise()
     mBackground = LoadTexture(
         "assets/Tiles and Background/Blue Background.png"
     );
+    mHealthBar = LoadTexture("assets/Health Bar.png");
     mBlueBirch = LoadTexture("assets/Tiles and Background/Blue Birch.png");
     mGreenBirch = LoadTexture("assets/Tiles and Background/Green Birch.png");
     mRedBirch = LoadTexture("assets/Tiles and Background/Red Birch.png");
@@ -220,6 +228,9 @@ void LevelA::update(float deltaTime)
 
     if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
     {
+        loseLife();
+        if (gGameProgress.lives <= 0) return;
+
         mGameState.player->setPosition(mPlayerStartPosition);
         mGameState.player->setVelocity({ 0.0f, 0.0f });
         mGameState.player->setMovement({ 0.0f, 0.0f });
@@ -281,6 +292,17 @@ void LevelA::updateHuntress(float deltaTime)
         setHuntressAnimation(HUNTRESS_IDLE);
     }
 
+    const bool isAttackAnimation =
+        mHuntressAnimation == HUNTRESS_ATTACK_ONE ||
+        mHuntressAnimation == HUNTRESS_ATTACK_TWO;
+    if (isAttackAnimation && !mHuntressDamageApplied &&
+        mGameState.player->collidesWith(mHuntress))
+    {
+        mHuntressDamageApplied = true;
+        loseLife();
+        if (gGameProgress.lives <= 0) return;
+    }
+
     const bool isFollowing =
         mHuntress->getAIState() == FOLLOWING ||
         mHuntress->getAIState() == WALKING;
@@ -331,6 +353,10 @@ void LevelA::setHuntressAnimation(HuntressAnimation animation)
 {
     if (mHuntressAnimation == animation) return;
 
+    if (animation == HUNTRESS_ATTACK_ONE ||
+        animation == HUNTRESS_ATTACK_TWO)
+        mHuntressDamageApplied = false;
+
     mHuntressAnimation = animation;
     mHuntressAnimationFrame = 0;
     mHuntressAnimationTime = 0.0f;
@@ -349,6 +375,16 @@ LevelA::HuntressAnimation LevelA::getHuntressMovementAnimation(
     if (GetLength(mHuntress->getMovement()) > 0.0f) return HUNTRESS_RUN;
 
     return HUNTRESS_IDLE;
+}
+
+void LevelA::loseLife()
+{
+    if (gGameProgress.lives <= 0) return;
+
+    gGameProgress.lives--;
+    PlaySound(gGameProgress.hurtSound);
+    if (gGameProgress.lives == 0)
+        mGameState.nextSceneID = LOSE_SCREEN;
 }
 
 Texture2D LevelA::getHuntressAnimationTexture() const
@@ -428,6 +464,33 @@ void LevelA::render()
 
     renderHuntress();
     mGameState.player->render();
+    renderHealthBar();
+}
+
+void LevelA::renderHealthBar()
+{
+    const float screenLeft =
+        mGameState.player->getPosition().x - mOrigin.x + 14.0f;
+    const float screenTop = 12.0f;
+    const float healthRatio = gGameProgress.lives / 5.0f;
+    const float fillWidth = 82.0f * healthRatio;
+
+    DrawTexturePro(
+        mHealthBar,
+        { 42.0f, 42.0f, fillWidth, 14.0f },
+        { screenLeft + 42.0f, screenTop + 13.0f, fillWidth, 14.0f },
+        { 0.0f, 0.0f },
+        0.0f,
+        WHITE
+    );
+    DrawTexturePro(
+        mHealthBar,
+        { 0.0f, 0.0f, 128.0f, 36.0f },
+        { screenLeft, screenTop, 128.0f, 36.0f },
+        { 0.0f, 0.0f },
+        0.0f,
+        WHITE
+    );
 }
 
 void LevelA::renderHuntress()
@@ -462,6 +525,8 @@ void LevelA::shutdown()
 
     UnloadTexture(mBackground);
     mBackground = {};
+    UnloadTexture(mHealthBar);
+    mHealthBar = {};
     UnloadTexture(mBlueBirch);
     mBlueBirch = {};
     UnloadTexture(mGreenBirch);

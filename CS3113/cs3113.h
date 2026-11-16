@@ -17,7 +17,7 @@
 enum AppStatus   { TERMINATED, RUNNING };
 enum TextureType { SINGLE, ATLAS       };
 // NO_SCENE is a distinct sentinel so scene ID zero remains a valid destination.
-enum SceneID     { NO_SCENE = -1, MAIN_MENU, LEVEL_A, LEVEL_B };
+enum SceneID     { NO_SCENE = -1, MAIN_MENU, LEVEL_A, LEVEL_B, LOSE_SCREEN };
 
 Color     ColorFromHex(const char *hex);
 void      Normalise(Vector2 *vector);
