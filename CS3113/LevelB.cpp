@@ -275,13 +275,14 @@ void LevelB::render()
         17.0f * LEVEL_B_TILE_SIZE;
     drawAtGround(mBlueBirch, mapLeft + 5.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
     drawAtGround(mRedBirch, mapLeft + 13.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
-    drawAtGround(mSmallTent, mapLeft + 20.0f * LEVEL_B_TILE_SIZE, groundY, 1.3f);
+    drawAtGround(mSmallTent, mapLeft + 18.0f * LEVEL_B_TILE_SIZE, groundY, 1.3f);
     drawAtGround(mGreenBirch, mapLeft + 28.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
+
     drawAtlasItemAtGround(
         mDecorAtlas,
         { 192.0f, 98.0f, 164.0f, 48.0f },
-        mapLeft + 39.0f * LEVEL_B_TILE_SIZE,
-        groundY,
+        mapLeft + 31.0f * LEVEL_B_TILE_SIZE,
+        groundY + 17.0f,
         1.0f
     );
     drawAtGround(mAngelStatue, mapLeft + 48.0f * LEVEL_B_TILE_SIZE, groundY, 1.3f);
@@ -289,18 +290,11 @@ void LevelB::render()
     drawAtlasItemAtGround(
         mDecorAtlas,
         { 315.0f, 134.0f, 48.0f, 42.0f },
-        mapLeft + 64.0f * LEVEL_B_TILE_SIZE,
+        mapLeft + 68.0f * LEVEL_B_TILE_SIZE,
         groundY,
         1.4f
     );
     drawAtGround(mRedBirch, mapLeft + 73.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
-    drawAtlasItemAtGround(
-        mDecorAtlas,
-        { 0.0f, 235.0f, 238.0f, 60.0f },
-        mapLeft + 86.0f * LEVEL_B_TILE_SIZE,
-        groundY,
-        0.75f
-    );
     drawAtGround(mBlueBirch, mapLeft + 96.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
     drawAtGround(mGreenBirch, mapLeft + 104.0f * LEVEL_B_TILE_SIZE, groundY, 1.5f);
 
