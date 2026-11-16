@@ -31,6 +31,7 @@ private:
     Texture2D mRedBirch{};
     Texture2D mSmallTent{};
     Texture2D mAngelStatue{};
+    Texture2D mDecorAtlas{};
     Texture2D mHuntressIdle{};
     Texture2D mHuntressRun{};
     Texture2D mHuntressJump{};

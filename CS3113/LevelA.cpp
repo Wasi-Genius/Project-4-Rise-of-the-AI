@@ -50,6 +50,26 @@ void drawAtGround(Texture2D texture, float centerX, float groundY, float scale)
     });
 }
 
+void drawAtlasItemAtGround(
+    Texture2D texture,
+    Rectangle source,
+    float centerX,
+    float groundY,
+    float scale
+)
+{
+    const float width = source.width * scale;
+    const float height = source.height * scale;
+    DrawTexturePro(
+        texture,
+        source,
+        { centerX - width / 2.0f, groundY - height, width, height },
+        { 0.0f, 0.0f },
+        0.0f,
+        WHITE
+    );
+}
+
 void drawHuntressFrame(
     Texture2D texture,
     int frame,
@@ -109,6 +129,7 @@ void LevelA::initialise()
     mRedBirch = LoadTexture("assets/Tiles and Background/Red Birch.png");
     mSmallTent = LoadTexture("assets/Tiles and Background/Small Tent.png");
     mAngelStatue = LoadTexture("assets/Tiles and Background/Angel Statue.png");
+    mDecorAtlas = LoadTexture("assets/Tiles and Background/Decor.png");
     mHuntressIdle = LoadTexture("assets/Huntress/Idle.png");
     mHuntressRun = LoadTexture("assets/Huntress/Run.png");
     mHuntressJump = LoadTexture("assets/Huntress/Jump.png");
@@ -458,6 +479,13 @@ void LevelA::render()
     drawAtGround(mRedBirch, mapLeft + 45.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
     drawAtGround(mSmallTent, mapLeft + 58.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
     drawAtGround(mBlueBirch, mapLeft + 70.0f * LEVEL_A_TILE_SIZE, groundY, 1.5f);
+    drawAtlasItemAtGround(
+        mDecorAtlas,
+        { 387.0f, 265.0f, 25.0f, 55.0f },
+        mGameState.map->getRightBoundary() - LEVEL_A_TILE_SIZE,
+        groundY,
+        1.5f
+    );
 
     renderHuntress();
     mGameState.player->render();
@@ -534,6 +562,8 @@ void LevelA::shutdown()
     mSmallTent = {};
     UnloadTexture(mAngelStatue);
     mAngelStatue = {};
+    UnloadTexture(mDecorAtlas);
+    mDecorAtlas = {};
     UnloadTexture(mHuntressIdle);
     mHuntressIdle = {};
     UnloadTexture(mHuntressRun);
