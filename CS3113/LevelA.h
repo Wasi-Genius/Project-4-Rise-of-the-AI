@@ -39,6 +39,7 @@ private:
     Texture2D mHuntressAttackOne{};
     Texture2D mHuntressAttackTwo{};
     Entity *mHuntress = nullptr;
+    Entity mLevelExit;
     Vector2 mPlayerStartPosition{};
     Vector2 mHuntressStartPosition{};
     HuntressAnimation mHuntressAnimation = HUNTRESS_IDLE;

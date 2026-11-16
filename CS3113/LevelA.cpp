@@ -186,6 +186,12 @@ void LevelA::initialise()
     mGameState.player->setColliderOffset({ -4.0f, 20.0f });
     mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
 
+    mLevelExit.setPosition({
+        mGameState.map->getRightBoundary() - LEVEL_A_TILE_SIZE,
+        groundY - 40.0f
+    });
+    mLevelExit.setColliderDimensions({ 40.0f, 80.0f });
+
     mHuntress = new Entity();
     mHuntress->setScale({ 150.0f, 150.0f });
     mHuntress->setColliderDimensions({ 44.0f, 58.0f });
@@ -246,6 +252,12 @@ void LevelA::update(float deltaTime)
         nullptr,
         0
     );
+
+    if (mGameState.player->collidesWith(&mLevelExit))
+    {
+        mGameState.nextSceneID = LEVEL_B;
+        return;
+    }
 
     if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
     {
