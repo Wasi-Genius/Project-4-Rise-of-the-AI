@@ -306,11 +306,8 @@ void LevelA::updateHuntress(float deltaTime)
     const bool isFollowing =
         mHuntress->getAIState() == FOLLOWING ||
         mHuntress->getAIState() == WALKING;
-    const bool isNearPlayer = isFollowing &&
-        Vector2Distance(
-            mHuntress->getPosition(),
-            mGameState.player->getPosition()
-        ) < 130.0f;
+    const bool isNearPlayer =
+        isFollowing && mGameState.player->collidesWith(mHuntress);
 
     if (isAttacking)
     {
