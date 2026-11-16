@@ -22,28 +22,35 @@ private:
     Vector2 mColliderOffset{ 0.0f, 0.0f };
 
     Texture2D   mTexture;
+    Texture2D   mIdleTexture{};
     Texture2D   mTurnAroundTexture{};
     TextureType mTextureType;
     Vector2     mSpriteSheetDimensions;
+    Vector2     mIdleSpriteSheetDimensions{};
     Vector2     mTurnAroundSpriteSheetDimensions{};
 
     std::map<Direction, std::vector<int>> mAnimationAtlas;
     std::vector<int>                      mAnimationIndices;
+    std::vector<int>                      mIdleAnimationFrames;
     std::vector<int>                      mTurnAroundAnimationFrames;
     Direction                             mDirection;
     int                                   mFrameSpeed;
 
     int   mCurrentFrameIndex = 0;
+    int   mIdleAnimationFrame = 0;
     int   mTurnAroundFrameIndex = 0;
     float mAnimationTime     = 0.0f;
+    float mIdleAnimationTime = 0.0f;
     float mTurnAroundAnimationTime = 0.0f;
 
     bool  mIsJumping    = false;
+    bool  mIsIdleAnimating = false;
     bool  mIsTurningAround = false;
     bool  mFlipWithDirection = false;
     float mJumpingPower = 0.0f;
 
     int   mSpeed;
+    int   mIdleFrameSpeed = 8;
     float mAngle;
 
     bool mIsCollidingTop    = false;
@@ -83,6 +90,7 @@ private:
     }
 
     void animate(float deltaTime);
+    void animateIdle(float deltaTime);
     void animateTurnAround(float deltaTime);
     void startTurnAround();
     void AIActivate(Entity *target);
@@ -178,6 +186,12 @@ public:
         const char *textureFilepath,
         Vector2 spriteSheetDimensions,
         std::vector<int> animationFrames
+    );
+    void setIdleAnimation(
+        const char *textureFilepath,
+        Vector2 spriteSheetDimensions,
+        std::vector<int> animationFrames,
+        int frameSpeed = 8
     );
     void setColliderDimensions(Vector2 newDimensions)
         { mColliderDimensions = newDimensions;     }

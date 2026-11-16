@@ -168,6 +168,12 @@ void LevelA::initialise()
         animationAtlas,
         PLAYER
     );
+    mGameState.player->setIdleAnimation(
+        "assets/Protag/_Idle.png",
+        { 1, 10 },
+        runningFrames,
+        8
+    );
     mGameState.player->setTurnAroundAnimation(
         "assets/Protag/_TurnAround.png",
         { 1, 3 },

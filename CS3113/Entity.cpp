@@ -48,6 +48,7 @@ Entity::Entity(
 Entity::~Entity()
 {
     UnloadTexture(mTexture);
+    UnloadTexture(mIdleTexture);
     UnloadTexture(mTurnAroundTexture);
 }
 
@@ -62,6 +63,23 @@ void Entity::setTurnAroundAnimation(
     mTurnAroundSpriteSheetDimensions = spriteSheetDimensions;
     mTurnAroundAnimationFrames = animationFrames;
     mFlipWithDirection = true;
+}
+
+void Entity::setIdleAnimation(
+    const char *textureFilepath,
+    Vector2 spriteSheetDimensions,
+    std::vector<int> animationFrames,
+    int frameSpeed
+)
+{
+    UnloadTexture(mIdleTexture);
+    mIdleTexture = LoadTexture(textureFilepath);
+    mIdleSpriteSheetDimensions = spriteSheetDimensions;
+    mIdleAnimationFrames = animationFrames;
+    mIdleFrameSpeed = frameSpeed > 0 ? frameSpeed : DEFAULT_FRAME_SPEED;
+    mIdleAnimationFrame = 0;
+    mIdleAnimationTime = 0.0f;
+    mIsIdleAnimating = false;
 }
 
 void Entity::startTurnAround()
@@ -339,6 +357,21 @@ void Entity::animate(float deltaTime)
     }
 }
 
+void Entity::animateIdle(float deltaTime)
+{
+    if (mIdleAnimationFrames.empty()) return;
+
+    mIdleAnimationTime += deltaTime;
+    const float secondsPerFrame = 1.0f / mIdleFrameSpeed;
+
+    while (mIdleAnimationTime >= secondsPerFrame)
+    {
+        mIdleAnimationTime -= secondsPerFrame;
+        mIdleAnimationFrame = (mIdleAnimationFrame + 1) %
+            static_cast<int>(mIdleAnimationFrames.size());
+    }
+}
+
 void Entity::animateTurnAround(float deltaTime)
 {
     mTurnAroundAnimationTime += deltaTime;
@@ -462,10 +495,30 @@ void Entity::update(
     checkCollisionX(collidableEntities, collisionCheckCount);
     checkCollisionX(map);
 
+    const bool shouldAnimateIdle =
+        mTextureType == ATLAS &&
+        !mIdleAnimationFrames.empty() &&
+        GetLength(mMovement) == 0.0f &&
+        mIsCollidingBottom;
+    if (shouldAnimateIdle != mIsIdleAnimating)
+    {
+        mIsIdleAnimating = shouldAnimateIdle;
+        mIdleAnimationFrame = 0;
+        mIdleAnimationTime = 0.0f;
+
+        if (!mIsIdleAnimating)
+        {
+            mCurrentFrameIndex = 0;
+            mAnimationTime = 0.0f;
+        }
+    }
+
     if (mIsTurningAround)
         animateTurnAround(deltaTime);
+    else if (mIsIdleAnimating)
+        animateIdle(deltaTime);
     else if (mTextureType == ATLAS && GetLength(mMovement) != 0 &&
-        mIsCollidingBottom)
+             mIsCollidingBottom)
         animate(deltaTime);
 }
 
@@ -500,12 +553,23 @@ void Entity::render()
         };
         break;
     case ATLAS:
-        textureArea = getUVRectangle(
-            &texture,
-            mAnimationIndices[mCurrentFrameIndex],
-            mSpriteSheetDimensions.x,
-            mSpriteSheetDimensions.y
-        );
+        if (mIsIdleAnimating)
+        {
+            texture = mIdleTexture;
+            textureArea = getUVRectangle(
+                &texture,
+                mIdleAnimationFrames[mIdleAnimationFrame],
+                mIdleSpriteSheetDimensions.x,
+                mIdleSpriteSheetDimensions.y
+            );
+        }
+        else
+            textureArea = getUVRectangle(
+                &texture,
+                mAnimationIndices[mCurrentFrameIndex],
+                mSpriteSheetDimensions.x,
+                mSpriteSheetDimensions.y
+            );
         break;
     default:
         break;
