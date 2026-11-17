@@ -300,6 +300,8 @@ void LevelB::update(float deltaTime)
 
 void LevelB::updateWarrior(float deltaTime)
 {
+    catchUpWarriorIfOffScreen();
+
     const bool isAttackAnimation =
         mWarriorAnimation == WARRIOR_ATTACK_ONE ||
         mWarriorAnimation == WARRIOR_ATTACK_TWO;
@@ -479,6 +481,105 @@ void LevelB::updateWarrior(float deltaTime)
 
         animateWarrior(deltaTime);
     }
+}
+
+void LevelB::catchUpWarriorIfOffScreen()
+{
+    const Vector2 playerPosition = mGameState.player->getPosition();
+    const Vector2 warriorPosition = mWarrior->getPosition();
+    const Vector2 warriorCollider = mWarrior->getColliderDimensions();
+    const float screenLeft = playerPosition.x - mOrigin.x;
+    const float warriorRight =
+        warriorPosition.x + mWarrior->getScale().x / 2.0f;
+
+    if (warriorRight >= screenLeft)
+        return;
+
+    const float minimumAhead =
+        playerPosition.x + 2.0f * LEVEL_B_TILE_SIZE;
+    const float preferredPosition =
+        playerPosition.x + 4.0f * LEVEL_B_TILE_SIZE;
+    const float maximumPosition =
+        mGameState.map->getRightBoundary() -
+        warriorCollider.x / 2.0f - 1.0f;
+    const float groundY = mGameState.map->getTopBoundary() +
+        17.0f * LEVEL_B_TILE_SIZE;
+    const float warriorY = groundY - warriorCollider.y / 2.0f;
+    const float sampleSpacing = LEVEL_B_TILE_SIZE / 2.0f;
+    float catchUpPosition = 0.0f;
+    bool foundCatchUpPosition = false;
+    float xOverlap = 0.0f;
+    float yOverlap = 0.0f;
+    const auto hasSafeGround = [&](float candidateX)
+    {
+        for (float horizontalOffset = -warriorCollider.x / 2.0f;
+             horizontalOffset <= warriorCollider.x / 2.0f;
+             horizontalOffset += warriorCollider.x / 2.0f)
+        {
+            if (!mGameState.map->isSolidTileAt(
+                    { candidateX + horizontalOffset, groundY + 1.0f },
+                    &xOverlap,
+                    &yOverlap
+                ))
+                return false;
+
+            for (float sampleY = warriorY - warriorCollider.y / 2.0f + 1.0f;
+                 sampleY < groundY;
+                 sampleY += sampleSpacing)
+            {
+                if (mGameState.map->isSolidTileAt(
+                        { candidateX + horizontalOffset, sampleY },
+                        &xOverlap,
+                        &yOverlap
+                    ))
+                    return false;
+            }
+        }
+
+        return true;
+    };
+
+    for (float candidateX = preferredPosition;
+         candidateX <= maximumPosition;
+         candidateX += sampleSpacing)
+    {
+        if (hasSafeGround(candidateX))
+        {
+            catchUpPosition = candidateX;
+            foundCatchUpPosition = true;
+            break;
+        }
+    }
+
+    if (!foundCatchUpPosition)
+    {
+        const float fallbackStart =
+            preferredPosition - sampleSpacing < maximumPosition
+                ? preferredPosition - sampleSpacing
+                : maximumPosition;
+        for (float candidateX = fallbackStart;
+             candidateX >= minimumAhead;
+             candidateX -= sampleSpacing)
+        {
+            if (hasSafeGround(candidateX))
+            {
+                catchUpPosition = candidateX;
+                foundCatchUpPosition = true;
+                break;
+            }
+        }
+    }
+
+    if (!foundCatchUpPosition) return;
+
+    mWarrior->setPosition({ catchUpPosition, warriorY });
+    mWarrior->setVelocity({ 0.0f, 0.0f });
+    mWarrior->setMovement({ 0.0f, 0.0f });
+    mWarrior->setEntityType(NPC);
+    mWarrior->moveRight();
+    mWarriorJumpTime = 0.0f;
+    mWarriorDamageApplied = false;
+    setWarriorAnimation(WARRIOR_IDLE);
 }
 
 bool LevelB::hasWarriorJumpClearance() const

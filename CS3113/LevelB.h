@@ -62,6 +62,7 @@ public:
 private:
     void buildLevelData();
     void updateWarrior(float deltaTime);
+    void catchUpWarriorIfOffScreen();
     bool hasWarriorJumpClearance() const;
     void setWarriorAnimation(WarriorAnimation animation);
     WarriorAnimation getWarriorMovementAnimation() const;
