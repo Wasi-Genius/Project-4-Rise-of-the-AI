@@ -2,6 +2,8 @@
 
 namespace
 {
+    const float LEVEL_C_STATUE_SCALE = 1.3f;
+
     void addCavePlatform(
         unsigned int *levelData,
         int mapColumns,
@@ -22,6 +24,12 @@ namespace
 
             levelData[topRow * mapColumns + column] = topTile;
 
+            for (int depth = 1;
+                 depth <= fillRows && topRow + depth < mapRows;
+                 depth++)
+            {
+                levelData[(topRow + depth) * mapColumns + column] = 65;
+            }
         }
     }
 
@@ -43,22 +51,6 @@ namespace
             spikeTiles[tileIndex] = true;
             groundSpikeTiles[tileIndex] = pointsUp;
         }
-    }
-
-    void drawCaveDirtTile(
-        Texture2D texture,
-        Rectangle source,
-        float x,
-        float y,
-        float tileSize)
-    {
-        DrawTexturePro(
-            texture,
-            source,
-            {x, y, tileSize, tileSize},
-            {0.0f, 0.0f},
-            0.0f,
-            WHITE);
     }
 
     void drawTexture(Texture2D texture, Rectangle destination)
@@ -115,7 +107,6 @@ void LevelC::initialise()
 
     mBackground = LoadTexture(
         "assets/Tiles and Background/Dark Background.png");
-    mCaveDirt = LoadTexture("assets/Tiles and Background/BG Dirt2.png");
     mHealthBar = LoadTexture("assets/Health Bar.png");
     mAngelStatue = LoadTexture(
         "assets/Tiles and Background/Angel Statue.png");
@@ -168,6 +159,21 @@ void LevelC::initialise()
     mGameState.player->setColliderDimensions({30.0f, 40.0f});
     mGameState.player->setColliderOffset({-4.0f, 20.0f});
     mGameState.player->setAcceleration({0.0f, SCENE_GRAVITY});
+
+    const float statueWidth = mAngelStatue.width * LEVEL_C_STATUE_SCALE;
+    const float statueHeight = mAngelStatue.height * LEVEL_C_STATUE_SCALE;
+    const float statueColumn = LEVEL_C_MAP_COLUMNS -
+        statueWidth / (2.0f * LEVEL_C_TILE_SIZE);
+    const float statueX =
+        mGameState.map->getLeftBoundary() +
+        statueColumn * LEVEL_C_TILE_SIZE;
+    const float statueGroundY =
+        getGroundYAtColumn(static_cast<int>(statueColumn));
+    mLevelExit.setPosition({
+        statueX,
+        statueGroundY - statueHeight / 2.0f
+    });
+    mLevelExit.setColliderDimensions({statueWidth, statueHeight});
 }
 
 void LevelC::buildLevelData()
@@ -176,6 +182,7 @@ void LevelC::buildLevelData()
          tileIndex < LEVEL_C_MAP_COLUMNS * LEVEL_C_MAP_ROWS;
          tileIndex++)
     {
+        mLevelData[tileIndex] = 0;
         mSpikeTiles[tileIndex] = false;
         mGroundSpikeTiles[tileIndex] = false;
     }
@@ -237,44 +244,34 @@ void LevelC::buildLevelData()
     // Ground spikes face up; overhead hazards keep their original orientation.
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 12, 13, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 12, 13, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 30, 31, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 30, 31, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 51, 52, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 51, 52, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 68, 69, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 68, 69, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 88, 90, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 88, 90, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 18, 110, 111, true
-    );
+        LEVEL_C_MAP_COLUMNS, 18, 110, 111, true);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 10, 31, 33, false
-    );
+        LEVEL_C_MAP_COLUMNS, 10, 31, 33, false);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 12, 53, 54, false
-    );
+        LEVEL_C_MAP_COLUMNS, 12, 53, 54, false);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 10, 80, 82, false
-    );
+        LEVEL_C_MAP_COLUMNS, 10, 80, 82, false);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 11, 108, 110, false
-    );
+        LEVEL_C_MAP_COLUMNS, 11, 108, 110, false);
 }
 
 void LevelC::update(float deltaTime)
@@ -297,6 +294,12 @@ void LevelC::update(float deltaTime)
         mGameState.player->setVelocity({0.0f, 0.0f});
         mGameState.player->setMovement({0.0f, 0.0f});
         mPlayerOnSpikes = false;
+    }
+
+    if (mGameState.player->collidesWith(&mLevelExit))
+    {
+        mGameState.nextSceneID = WIN_SCREEN;
+        return;
     }
 
     // Only charge once until the player leaves the current spike contact.
@@ -403,70 +406,97 @@ void LevelC::render()
     drawTexture(mBackground, {backgroundLeft + backgroundWidth, 0.0f,
                               backgroundWidth, backgroundHeight});
 
-    const float mapLeft = mGameState.map->getLeftBoundary();
-    const float mapTop = mGameState.map->getTopBoundary();
-    const float groundY = mapTop + 18.0f * LEVEL_C_TILE_SIZE;
-
     mGameState.map->render();
     renderSpikes();
 
-    // Barrel slices from Decor.png; the map columns set their positions.
-    drawAtlasItemAtGround(
+    // Each decoration sits on the first solid platform or floor tile below it.
+    drawDecorationAtGround(
         mDecorAtlas, {64.0f, 0.0f, 32.0f, 32.0f},
-        mapLeft + 8.0f * LEVEL_C_TILE_SIZE, groundY, 1.6f);
-    drawAtlasItemAtGround(
+        8.5f, 1.6f);
+    drawDecorationAtGround(
         mDecorAtlas, {96.0f, 0.0f, 32.0f, 32.0f},
-        mapLeft + 27.0f * LEVEL_C_TILE_SIZE, groundY, 1.6f);
-    drawAtlasItemAtGround(
+        29.5f, 1.6f);
+    drawDecorationAtGround(
         mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
-        mapLeft + 48.0f * LEVEL_C_TILE_SIZE, groundY, 1.7f);
-    drawAtlasItemAtGround(
+        48.5f, 1.7f);
+    drawDecorationAtGround(
         mDecorAtlas, {96.0f, 0.0f, 32.0f, 32.0f},
-        mapLeft + 73.0f * LEVEL_C_TILE_SIZE, groundY, 1.5f);
-    drawAtlasItemAtGround(
+        73.5f, 1.5f);
+    drawDecorationAtGround(
         mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
-        mapLeft + 103.0f * LEVEL_C_TILE_SIZE, groundY, 1.7f);
+        103.5f, 1.7f);
 
     // Large stone piles are drawn from separate atlas cuts and spread out.
-    drawAtlasItemAtGround(
+    drawDecorationAtGround(
         mDecorAtlas, {0.0f, 288.0f, 64.0f, 64.0f},
-        mapLeft + 16.0f * LEVEL_C_TILE_SIZE, groundY, 1.1f);
-    drawAtlasItemAtGround(
+        16.5f, 1.1f);
+    drawDecorationAtGround(
         mDecorAtlas, {64.0f, 288.0f, 64.0f, 64.0f},
-        mapLeft + 44.0f * LEVEL_C_TILE_SIZE, groundY, 1.1f);
-    drawAtlasItemAtGround(
+        43.5f, 1.1f);
+    drawDecorationAtGround(
         mDecorAtlas, {128.0f, 288.0f, 64.0f, 64.0f},
-        mapLeft + 67.0f * LEVEL_C_TILE_SIZE, groundY, 1.1f);
-    drawAtlasItemAtGround(
+        66.5f, 1.1f);
+    drawDecorationAtGround(
         mDecorAtlas, {0.0f, 288.0f, 64.0f, 64.0f},
-        mapLeft + 91.0f * LEVEL_C_TILE_SIZE, groundY, 1.1f);
-    drawAtlasItemAtGround(
+        92.5f, 1.1f);
+    drawDecorationAtGround(
         mDecorAtlas, {64.0f, 288.0f, 64.0f, 64.0f},
-        mapLeft + 115.0f * LEVEL_C_TILE_SIZE, groundY, 1.1f);
+        114.5f, 1.1f);
 
     // Scarecrow atlas crop, placed in two different sections of the level.
-    drawAtlasItemAtGround(
+    drawDecorationAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        mapLeft + 37.0f * LEVEL_C_TILE_SIZE, groundY, 5.0f);
-    drawAtlasItemAtGround(
+        37.5f, 1.0f);
+    drawDecorationAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        mapLeft + 84.0f * LEVEL_C_TILE_SIZE, groundY, 5.0f);
+        84.5f, 1.0f);
 
     // Small debris is near the middle; the statue marks the far end.
-    drawAtlasItemAtGround(
+    drawDecorationAtGround(
         mDecorAtlas, {32.0f, 224.0f, 64.0f, 32.0f},
-        mapLeft + 58.0f * LEVEL_C_TILE_SIZE, groundY, 1.0f);
+        57.5f, 1.0f);
 
+    const Vector2 statuePosition = mLevelExit.getPosition();
+    const float statueGroundY =
+                               statuePosition.y + mAngelStatue.height * LEVEL_C_STATUE_SCALE / 2.0f;
     drawAtlasItemAtGround(
         mAngelStatue,
         {0.0f, 0.0f, static_cast<float>(mAngelStatue.width),
          static_cast<float>(mAngelStatue.height)},
-        mGameState.map->getRightBoundary() - LEVEL_C_TILE_SIZE,
-        groundY,
-        1.3f);
+                               statuePosition.x,
+                               statueGroundY,
+                               LEVEL_C_STATUE_SCALE);
 
     mGameState.player->render();
     renderHealthBar();
+}
+
+float LevelC::getGroundYAtColumn(int column) const
+{
+    const float mapTop = mGameState.map->getTopBoundary();
+
+    // Rows 12-18 contain the raised platforms and main floor; roofs are above.
+    for (int row = 12; row <= 18; row++)
+    {
+        if (mLevelData[row * LEVEL_C_MAP_COLUMNS + column] != 0)
+            return mapTop + row * LEVEL_C_TILE_SIZE;
+    }
+
+    return mGameState.map->getBottomBoundary();
+}
+
+void LevelC::drawDecorationAtGround(
+    Texture2D texture,
+    Rectangle source,
+    float tileColumn,
+    float scale)
+{
+    const float centerX =
+        mGameState.map->getLeftBoundary() + tileColumn * LEVEL_C_TILE_SIZE;
+    const int column = static_cast<int>(tileColumn);
+    const float groundY = getGroundYAtColumn(column);
+
+    drawAtlasItemAtGround(texture, source, centerX, groundY, scale);
 }
 
 void LevelC::renderSpikes()
@@ -481,7 +511,8 @@ void LevelC::renderSpikes()
         for (int column = 0; column < LEVEL_C_MAP_COLUMNS; column++)
         {
             const int tileIndex = row * LEVEL_C_MAP_COLUMNS + column;
-            if (!mSpikeTiles[tileIndex]) continue;
+            if (!mSpikeTiles[tileIndex])
+                continue;
 
             // Alternate the two spike atlas tiles used by the original layout.
             const int spikeTileID = column % 2 == 0 ? 89 : 90;
@@ -489,8 +520,7 @@ void LevelC::renderSpikes()
                 &texture,
                 spikeTileID - 1,
                 mGameState.map->getTextureRows(),
-                mGameState.map->getTextureColumns()
-            );
+                mGameState.map->getTextureColumns());
             const float rotation =
                 mGroundSpikeTiles[tileIndex] ? 180.0f : 0.0f;
             const float x = mapLeft + column * tileSize;
@@ -499,11 +529,10 @@ void LevelC::renderSpikes()
             DrawTexturePro(
                 texture,
                 source,
-                { x, y, tileSize, tileSize },
-                { tileSize / 2.0f, tileSize / 2.0f },
+                {x, y, tileSize, tileSize},
+                {tileSize / 2.0f, tileSize / 2.0f},
                 rotation,
-                WHITE
-            );
+                WHITE);
         }
     }
 }
@@ -539,8 +568,6 @@ void LevelC::shutdown()
 
     UnloadTexture(mBackground);
     mBackground = {};
-    UnloadTexture(mCaveDirt);
-    mCaveDirt = {};
     UnloadTexture(mHealthBar);
     mHealthBar = {};
     UnloadTexture(mAngelStatue);

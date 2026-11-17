@@ -3,6 +3,7 @@
 #include "CS3113/LevelC.h"
 #include "CS3113/LoseScene.h"
 #include "CS3113/MenuScene.h"
+#include "CS3113/WinScene.h"
 
 constexpr int SCREEN_WIDTH = 1000,
               SCREEN_HEIGHT = 600,
@@ -56,6 +57,7 @@ void initialise()
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
     gLevels[LEVEL_C] = new LevelC(ORIGIN, "#10121F");
     gLevels[LOSE_SCREEN] = new LoseScene(ORIGIN, "#A00000");
+    gLevels[WIN_SCREEN] = new WinScene(ORIGIN, "#008000");
     switchToScene(gLevels[MAIN_MENU]);
 
     // Camera2D keeps the player horizontally centred while preserving the

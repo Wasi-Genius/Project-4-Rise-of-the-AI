@@ -45,6 +45,10 @@ ifeq ($(wildcard CS3113/LoseScene.cpp),CS3113/LoseScene.cpp)
     SRCS += CS3113/LoseScene.cpp
 endif
 
+ifeq ($(wildcard CS3113/WinScene.cpp),CS3113/WinScene.cpp)
+    SRCS += CS3113/WinScene.cpp
+endif
+
 # Default values
 CXX = g++
 CXXFLAGS = -std=c++11

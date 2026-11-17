@@ -25,10 +25,10 @@ private:
 
     // Textures loaded and released by this scene.
     Texture2D mBackground{};
-    Texture2D mCaveDirt{}; // BG Dirt2, cropped in drawCaveDirtPatch().
     Texture2D mHealthBar{};
     Texture2D mAngelStatue{};
     Texture2D mDecorAtlas{};
+    Entity mLevelExit;
     Vector2 mPlayerStartPosition{};
     // Prevent repeated damage while the player remains on one spike contact.
     bool mPlayerOnSpikes = false;
@@ -48,6 +48,12 @@ private:
     void buildLevelData();
     bool isPlayerTouchingSpikes() const;
     void loseLife();
+    float getGroundYAtColumn(int column) const;
+    void drawDecorationAtGround(
+        Texture2D texture,
+        Rectangle source,
+        float tileColumn,
+        float scale);
     void renderSpikes();
     void renderHealthBar();
 };

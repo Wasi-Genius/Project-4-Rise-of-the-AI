@@ -24,7 +24,8 @@ enum SceneID
     LEVEL_A,
     LEVEL_B,
     LEVEL_C,
-    LOSE_SCREEN
+    LOSE_SCREEN,
+    WIN_SCREEN
 };
 
 Color     ColorFromHex(const char *hex);
