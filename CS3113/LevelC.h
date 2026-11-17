@@ -52,6 +52,7 @@ private:
     WizardAnimation mWizardAnimation = WIZARD_IDLE;
     int mWizardAnimationFrame = 0;
     float mWizardAnimationTime = 0.0f;
+    float mWizardDamageCooldown = 0.0f;
     bool mWizardAnimationFinished = false;
     bool mWizardAttackTwoNext = false;
     bool mWizardWasTouchingPlayer = false;

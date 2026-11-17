@@ -3,6 +3,8 @@
 namespace
 {
     const float LEVEL_C_STATUE_SCALE = 1.3f;
+    const int LEVEL_C_WIZARD_SPEED = 120;
+    const float LEVEL_C_WIZARD_DAMAGE_COOLDOWN = 1.5f;
 
     void addCavePlatform(
         unsigned int *levelData,
@@ -123,6 +125,7 @@ void LevelC::initialise()
     mWizardAnimationFinished = false;
     mWizardAttackTwoNext = false;
     mWizardWasTouchingPlayer = false;
+    mWizardDamageCooldown = 0.0f;
 
     buildLevelData();
     mGameState.map = new Map(
@@ -198,7 +201,7 @@ void LevelC::initialise()
     mWizard->setAIType(FLYER);
     mWizard->setAIState(FOLLOWING);
     mWizard->setDirection(RIGHT);
-    mWizard->setSpeed(220);
+    mWizard->setSpeed(LEVEL_C_WIZARD_SPEED);
 }
 
 void LevelC::buildLevelData()
@@ -503,6 +506,13 @@ void LevelC::render()
 
 void LevelC::updateWizard(float deltaTime)
 {
+    if (mWizardDamageCooldown > 0.0f)
+    {
+        mWizardDamageCooldown -= deltaTime;
+        if (mWizardDamageCooldown < 0.0f)
+            mWizardDamageCooldown = 0.0f;
+    }
+
     mWizard->update(
                                deltaTime,
                                mGameState.player,
@@ -551,7 +561,11 @@ void LevelC::updateWizard(float deltaTime)
     if (touchingPlayer && !mWizardWasTouchingPlayer)
     {
                                mWizardWasTouchingPlayer = true;
-                               loseLife();
+                               if (mWizardDamageCooldown == 0.0f)
+                               {
+                                   loseLife();
+                                   mWizardDamageCooldown = LEVEL_C_WIZARD_DAMAGE_COOLDOWN;
+                               }
     }
     else if (!touchingPlayer)
                                mWizardWasTouchingPlayer = false;
