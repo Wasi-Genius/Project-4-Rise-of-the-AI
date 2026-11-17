@@ -203,7 +203,7 @@ void LevelB::initialise()
     mWarrior->setPosition(mWarriorStartPosition);
     mWarrior->setEntityType(NPC);
     mWarrior->setAIType(WANDERER);
-    mWarrior->setDirection(LEFT);
+    mWarrior->moveRight();
     mWarrior->setSpeed(150);
     mWarrior->setJumpingPower(520.0f);
     mWarrior->setAcceleration({ 0.0f, SCENE_GRAVITY });
@@ -354,13 +354,29 @@ void LevelB::updateWarrior(float deltaTime)
                 &xOverlap,
                 &yOverlap
             );
+            const bool pastMapEdge =
+                groundAhead.x < mGameState.map->getLeftBoundary() ||
+                groundAhead.x >= mGameState.map->getRightBoundary();
 
-            if (!hasGroundAhead || mWarriorJumpTime >= 2.5f)
+            const bool hasJumpClearance = hasWarriorJumpClearance();
+            const bool shouldJump = (!hasGroundAhead && !pastMapEdge) ||
+                mWarriorJumpTime >= 2.5f;
+
+            if (shouldJump && hasJumpClearance && !pastMapEdge)
             {
                 mWarrior->jump();
                 mWarriorJumpTime = 0.0f;
                 PlaySound(mGameState.jumpSound);
             }
+            else if (!hasGroundAhead || pastMapEdge)
+            {
+                if (direction < 0.0f)
+                    mWarrior->moveRight();
+                else
+                    mWarrior->moveLeft();
+            }
+            else if (mWarriorJumpTime >= 2.5f)
+                mWarriorJumpTime = 0.0f;
         }
     }
 
@@ -378,6 +394,7 @@ void LevelB::updateWarrior(float deltaTime)
         mWarrior->setVelocity({ 0.0f, 0.0f });
         mWarrior->setMovement({ 0.0f, 0.0f });
         mWarrior->setEntityType(NPC);
+        mWarrior->moveRight();
         setWarriorAnimation(WARRIOR_IDLE);
         return;
     }
@@ -462,6 +479,42 @@ void LevelB::updateWarrior(float deltaTime)
 
         animateWarrior(deltaTime);
     }
+}
+
+bool LevelB::hasWarriorJumpClearance() const
+{
+    const Vector2 position = mWarrior->getPosition();
+    const Vector2 collider = mWarrior->getColliderDimensions();
+    const float topY = position.y - collider.y / 2.0f;
+    const float sideOffset = collider.x / 2.0f;
+    const float sampleSpacing = LEVEL_B_TILE_SIZE / 2.0f;
+    const float jumpHeight = 140.0f;
+    float xOverlap = 0.0f;
+    float yOverlap = 0.0f;
+
+    for (float height = sampleSpacing; height <= jumpHeight;
+         height += sampleSpacing)
+    {
+        const float sampleY = topY - height;
+        if (mGameState.map->isSolidTileAt(
+                { position.x - sideOffset, sampleY },
+                &xOverlap,
+                &yOverlap
+            ) ||
+            mGameState.map->isSolidTileAt(
+                { position.x, sampleY },
+                &xOverlap,
+                &yOverlap
+            ) ||
+            mGameState.map->isSolidTileAt(
+                { position.x + sideOffset, sampleY },
+                &xOverlap,
+                &yOverlap
+            ))
+            return false;
+    }
+
+    return true;
 }
 
 void LevelB::setWarriorAnimation(WarriorAnimation animation)
