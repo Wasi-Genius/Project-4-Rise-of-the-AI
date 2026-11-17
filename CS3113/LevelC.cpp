@@ -111,6 +111,18 @@ void LevelC::initialise()
     mAngelStatue = LoadTexture(
         "assets/Tiles and Background/Angel Statue.png");
     mDecorAtlas = LoadTexture("assets/Tiles and Background/Decor.png");
+    mWizardIdle = LoadTexture("assets/Wizard/Idle.png");
+    mWizardRun = LoadTexture("assets/Wizard/Run.png");
+    mWizardJump = LoadTexture("assets/Wizard/Jump.png");
+    mWizardFall = LoadTexture("assets/Wizard/Fall.png");
+    mWizardAttackOne = LoadTexture("assets/Wizard/Attack1.png");
+    mWizardAttackTwo = LoadTexture("assets/Wizard/Attack2.png");
+    mWizardAnimation = WIZARD_IDLE;
+    mWizardAnimationFrame = 0;
+    mWizardAnimationTime = 0.0f;
+    mWizardAnimationFinished = false;
+    mWizardAttackTwoNext = false;
+    mWizardWasTouchingPlayer = false;
 
     buildLevelData();
     mGameState.map = new Map(
@@ -174,6 +186,19 @@ void LevelC::initialise()
         statueGroundY - statueHeight / 2.0f
     });
     mLevelExit.setColliderDimensions({statueWidth, statueHeight});
+
+    mWizard = new Entity();
+    mWizard->setScale({220.0f, 220.0f});
+    mWizard->setColliderDimensions({64.0f, 82.0f});
+    mWizard->setPosition({
+        mGameState.map->getLeftBoundary() + 32.0f * LEVEL_C_TILE_SIZE,
+        mGameState.map->getTopBoundary() + 8.0f * LEVEL_C_TILE_SIZE
+    });
+    mWizard->setEntityType(NPC);
+    mWizard->setAIType(FLYER);
+    mWizard->setAIState(FOLLOWING);
+    mWizard->setDirection(RIGHT);
+    mWizard->setSpeed(220);
 }
 
 void LevelC::buildLevelData()
@@ -301,6 +326,10 @@ void LevelC::update(float deltaTime)
         mGameState.nextSceneID = WIN_SCREEN;
         return;
     }
+
+    updateWizard(deltaTime);
+    if (mGameState.nextSceneID == LOSE_SCREEN)
+        return;
 
     // Only charge once until the player leaves the current spike contact.
     const bool touchingSpikes = isPlayerTouchingSpikes();
@@ -467,8 +496,161 @@ void LevelC::render()
                                statueGroundY,
                                LEVEL_C_STATUE_SCALE);
 
+    renderWizard();
     mGameState.player->render();
     renderHealthBar();
+}
+
+void LevelC::updateWizard(float deltaTime)
+{
+    mWizard->update(
+                               deltaTime,
+                               mGameState.player,
+                               nullptr,
+                               nullptr,
+                               0);
+
+    const bool touchingPlayer = mGameState.player->collidesWith(mWizard);
+    const bool isAttackAnimation =
+                               mWizardAnimation == WIZARD_ATTACK_ONE ||
+                               mWizardAnimation == WIZARD_ATTACK_TWO;
+
+    if (isAttackAnimation && !touchingPlayer)
+                               setWizardAnimation(getWizardMovementAnimation());
+    else if (!isAttackAnimation && touchingPlayer)
+    {
+                               setWizardAnimation(
+                                   mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
+                               mWizardAttackTwoNext = !mWizardAttackTwoNext;
+    }
+
+    if (mWizardAnimation == WIZARD_ATTACK_ONE ||
+                               mWizardAnimation == WIZARD_ATTACK_TWO)
+    {
+                               if (!mWizardAnimationFinished)
+                                   animateWizard(deltaTime);
+
+                               if (mWizardAnimationFinished)
+                               {
+                                   if (touchingPlayer)
+                                   {
+                                       setWizardAnimation(
+                                           mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
+                                       mWizardAttackTwoNext = !mWizardAttackTwoNext;
+                                   }
+                                   else
+                                       setWizardAnimation(getWizardMovementAnimation());
+                               }
+    }
+    else
+    {
+                               setWizardAnimation(getWizardMovementAnimation());
+                               animateWizard(deltaTime);
+    }
+
+    if (touchingPlayer && !mWizardWasTouchingPlayer)
+    {
+                               mWizardWasTouchingPlayer = true;
+                               loseLife();
+    }
+    else if (!touchingPlayer)
+                               mWizardWasTouchingPlayer = false;
+}
+
+void LevelC::setWizardAnimation(WizardAnimation animation)
+{
+    if (mWizardAnimation == animation)
+                               return;
+
+    mWizardAnimation = animation;
+    mWizardAnimationFrame = 0;
+    mWizardAnimationTime = 0.0f;
+    mWizardAnimationFinished = false;
+}
+
+LevelC::WizardAnimation LevelC::getWizardMovementAnimation() const
+{
+    const float verticalVelocity = mWizard->getVelocity().y;
+    if (verticalVelocity < -1.0f)
+                               return WIZARD_JUMP;
+    if (verticalVelocity > 1.0f)
+                               return WIZARD_FALL;
+    if (GetLength(mWizard->getMovement()) > 0.0f)
+                               return WIZARD_RUN;
+
+    return WIZARD_IDLE;
+}
+
+Texture2D LevelC::getWizardAnimationTexture() const
+{
+    switch (mWizardAnimation)
+    {
+    case WIZARD_RUN:
+                               return mWizardRun;
+    case WIZARD_JUMP:
+                               return mWizardJump;
+    case WIZARD_FALL:
+                               return mWizardFall;
+    case WIZARD_ATTACK_ONE:
+                               return mWizardAttackOne;
+    case WIZARD_ATTACK_TWO:
+                               return mWizardAttackTwo;
+    case WIZARD_IDLE:
+    default:
+                               return mWizardIdle;
+    }
+}
+
+void LevelC::animateWizard(float deltaTime)
+{
+    const Texture2D texture = getWizardAnimationTexture();
+    const int frameCount = texture.width / texture.height;
+    const float secondsPerFrame =
+                               1.0f / static_cast<float>(Entity::DEFAULT_FRAME_SPEED);
+
+    mWizardAnimationTime += deltaTime;
+    while (mWizardAnimationTime >= secondsPerFrame)
+    {
+                               mWizardAnimationTime -= secondsPerFrame;
+                               if (mWizardAnimationFrame + 1 < frameCount)
+                                   mWizardAnimationFrame++;
+                               else if (mWizardAnimation == WIZARD_ATTACK_ONE ||
+                                        mWizardAnimation == WIZARD_ATTACK_TWO)
+                               {
+                                   mWizardAnimationFinished = true;
+                                   break;
+                               }
+                               else
+                                   mWizardAnimationFrame = 0;
+    }
+}
+
+void LevelC::renderWizard()
+{
+    const Texture2D texture = getWizardAnimationTexture();
+    const int frameCount = texture.width / texture.height;
+    Rectangle source = getUVRectangle(
+                               &texture,
+                               mWizardAnimationFrame,
+                               1,
+                               frameCount);
+    if (mWizard->getDirection() == LEFT)
+                               source.width *= -1.0f;
+
+    const Vector2 position = mWizard->getPosition();
+    const Vector2 size = mWizard->getScale();
+    DrawTexturePro(
+                               texture,
+                               source,
+                               {
+                                   position.x - size.x / 2.0f,
+                                   position.y - size.y / 2.0f,
+                                   size.x,
+                                   size.y
+                               },
+                               {0.0f, 0.0f},
+                               0.0f,
+                               WHITE);
 }
 
 float LevelC::getGroundYAtColumn(int column) const
@@ -563,6 +745,8 @@ void LevelC::shutdown()
 {
     delete mGameState.player;
     mGameState.player = nullptr;
+    delete mWizard;
+    mWizard = nullptr;
     delete mGameState.map;
     mGameState.map = nullptr;
 
@@ -574,6 +758,18 @@ void LevelC::shutdown()
     mAngelStatue = {};
     UnloadTexture(mDecorAtlas);
     mDecorAtlas = {};
+    UnloadTexture(mWizardIdle);
+    mWizardIdle = {};
+    UnloadTexture(mWizardRun);
+    mWizardRun = {};
+    UnloadTexture(mWizardJump);
+    mWizardJump = {};
+    UnloadTexture(mWizardFall);
+    mWizardFall = {};
+    UnloadTexture(mWizardAttackOne);
+    mWizardAttackOne = {};
+    UnloadTexture(mWizardAttackTwo);
+    mWizardAttackTwo = {};
 
     UnloadMusicStream(mGameState.bgm);
     mGameState.bgm = {};

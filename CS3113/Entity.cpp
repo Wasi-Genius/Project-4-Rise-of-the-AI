@@ -448,6 +448,33 @@ void Entity::AIFollow(Entity *target)
     }
 }
 
+void Entity::AIFly(Entity *target)
+{
+    if (target == nullptr)
+    {
+        mMovement = {0.0f, 0.0f};
+        return;
+    }
+
+    const Vector2 targetPosition = target->getPosition();
+    const float differenceX = targetPosition.x - mPosition.x;
+    const float differenceY = targetPosition.y - mPosition.y;
+    const float distance = GetLength({differenceX, differenceY});
+
+    if (distance == 0.0f)
+    {
+        mMovement = {0.0f, 0.0f};
+        return;
+    }
+
+    mMovement = {differenceX / distance, differenceY / distance};
+
+    if (differenceX < 0.0f)
+        setDirection(LEFT);
+    else if (differenceX > 0.0f)
+        setDirection(RIGHT);
+}
+
 void Entity::AIActivate(Entity *target)
 {
     switch (mAIType)
@@ -457,6 +484,9 @@ void Entity::AIActivate(Entity *target)
         break;
     case FOLLOWER:
         AIFollow(target);
+        break;
+    case FLYER:
+        AIFly(target);
         break;
     default:
         break;
@@ -477,28 +507,38 @@ void Entity::update(
 
     resetColliderFlags();
 
-    mVelocity.x = mMovement.x * mSpeed;
-
-    mVelocity.x += mAcceleration.x * deltaTime;
-    mVelocity.y += mAcceleration.y * deltaTime;
-
-    // ––––– JUMPING ––––– //
-    if (mIsJumping)
+    if (mAIType == FLYER)
     {
-        // STEP 1: Immediately return the flag to its original false state
-        mIsJumping = false;
-
-        // STEP 2: The player now acquires an upward velocity
-        mVelocity.y -= mJumpingPower;
+        // Flyers move directly in two dimensions without gravity or map collision.
+        mVelocity = {
+            mMovement.x * mSpeed,
+            mMovement.y * mSpeed
+        };
+        mPosition.x += mVelocity.x * deltaTime;
+        mPosition.y += mVelocity.y * deltaTime;
     }
+    else
+    {
+        mVelocity.x = mMovement.x * mSpeed;
 
-    mPosition.y += mVelocity.y * deltaTime;
-    checkCollisionY(collidableEntities, collisionCheckCount);
-    checkCollisionY(map);
+        mVelocity.x += mAcceleration.x * deltaTime;
+        mVelocity.y += mAcceleration.y * deltaTime;
 
-    mPosition.x += mVelocity.x * deltaTime;
-    checkCollisionX(collidableEntities, collisionCheckCount);
-    checkCollisionX(map);
+        // ––––– JUMPING ––––– //
+        if (mIsJumping)
+        {
+            mIsJumping = false;
+            mVelocity.y -= mJumpingPower;
+        }
+
+        mPosition.y += mVelocity.y * deltaTime;
+        checkCollisionY(collidableEntities, collisionCheckCount);
+        checkCollisionY(map);
+
+        mPosition.x += mVelocity.x * deltaTime;
+        checkCollisionX(collidableEntities, collisionCheckCount);
+        checkCollisionX(map);
+    }
 
     const bool shouldAnimateIdle =
         mTextureType == ATLAS &&
