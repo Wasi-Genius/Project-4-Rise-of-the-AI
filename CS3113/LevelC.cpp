@@ -400,7 +400,7 @@ bool LevelC::isPlayerTouchingSpikes() const
 
 void LevelC::loseLife()
 {
-    // Falls and spikes share the game's persistent lives and hurt sound.
+    // Falls and spikes share the game's persistent lives and hurt sound
     if (gGameProgress.lives > 0)
     {
         gGameProgress.lives--;
@@ -442,22 +442,18 @@ void LevelC::render()
     drawDecorationAtGround(
         mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
         48.5f, 1.7f);
-    drawDecorationAtGround(
-        mDecorAtlas, {96.0f, 0.0f, 32.0f, 32.0f},
-        73.5f, 1.5f);
-    drawDecorationAtGround(
-        mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
-        103.5f, 1.7f);
+    
 
-
-    // Scarecrow atlas crop, placed in two different sections of the level.
+    // Scarecrow 
     drawDecorationAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        84.5f, 1.0f, 50.0f);
+        84.5f, 1.0f, 30.0f);
 
     const Vector2 statuePosition = mLevelExit.getPosition();
+
     const float statueGroundY =
         statuePosition.y + mAngelStatue.height * LEVEL_C_STATUE_SCALE / 2.0f;
+
     drawAtlasItemAtGround(
         mAngelStatue,
         {0.0f, 0.0f, static_cast<float>(mAngelStatue.width),
