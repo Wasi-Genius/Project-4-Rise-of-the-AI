@@ -3,11 +3,11 @@
 
 #include "Scene.h"
 
-// LevelA is one concrete scene: its map data, assets, and transition request
-// belong here rather than in the global game loop.
+// Level A owns its map, assets, and exit logic
 class LevelA : public Scene
 {
 private:
+    // Huntress animation states
     enum HuntressAnimation
     {
         HUNTRESS_IDLE,
@@ -24,6 +24,7 @@ private:
 
     unsigned int mLevelData[LEVEL_A_MAP_COLUMNS * LEVEL_A_MAP_ROWS] = {};
 
+    // Level and character textures
     Texture2D mBackground{};
     Texture2D mHealthBar{};
     Texture2D mBlueBirch{};
@@ -38,6 +39,7 @@ private:
     Texture2D mHuntressFall{};
     Texture2D mHuntressAttackOne{};
     Texture2D mHuntressAttackTwo{};
+    // Enemies and level positions
     Entity *mHuntress = nullptr;
     Entity mLevelExit;
     Vector2 mPlayerStartPosition{};

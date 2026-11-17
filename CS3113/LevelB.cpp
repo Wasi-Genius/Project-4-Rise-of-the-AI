@@ -2,6 +2,7 @@
 
 namespace
 {
+// Build platforms and draw level sprites
 void addPlatform(
     unsigned int *levelData,
     int mapColumns,
@@ -105,6 +106,7 @@ LevelB::~LevelB()
 
 void LevelB::initialise()
 {
+    // Reset enemy animation state when the level starts
     mWarriorAnimation = WARRIOR_IDLE;
     mWarriorAnimationFrame = 0;
     mWarriorAnimationTime = 0.0f;
@@ -113,6 +115,7 @@ void LevelB::initialise()
     mWarriorDamageApplied = false;
     mWarriorAttackTwoNext = false;
 
+    // Load music, sounds, and textures for this level
     mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 2 BGM.mp3");
     SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
@@ -136,6 +139,7 @@ void LevelB::initialise()
     mWarriorAttackOne = LoadTexture("assets/Warrior/Attack1.png");
     mWarriorAttackTwo = LoadTexture("assets/Warrior/Attack2.png");
 
+    // Create the map and both characters
     buildLevelData();
     mGameState.map = new Map(
         LEVEL_B_MAP_COLUMNS,
@@ -217,9 +221,11 @@ void LevelB::initialise()
 
 void LevelB::buildLevelData()
 {
+    // Main ground and gaps
     addPlatform(
         mLevelData, LEVEL_B_MAP_COLUMNS, LEVEL_B_MAP_ROWS, 0, 19, 17, 2
     );
+    // Raised platforms
     addPlatform(
         mLevelData, LEVEL_B_MAP_COLUMNS, LEVEL_B_MAP_ROWS, 22, 40, 17, 2
     );
@@ -282,6 +288,7 @@ void LevelB::update(float deltaTime)
         0
     );
 
+    // Move to the next level when the player reaches the statue
     if (mGameState.player->collidesWith(&mLevelExit))
     {
         mGameState.nextSceneID = LEVEL_C;
@@ -312,6 +319,7 @@ void LevelB::update(float deltaTime)
 
 void LevelB::updateWarrior(float deltaTime)
 {
+    // Bring the warrior forward if the player leaves him behind
     catchUpWarriorIfOffScreen();
 
     const bool isAttackAnimation =
@@ -522,6 +530,7 @@ void LevelB::catchUpWarriorIfOffScreen()
     bool foundCatchUpPosition = false;
     float xOverlap = 0.0f;
     float yOverlap = 0.0f;
+    // Check that a landing spot has ground and enough room above it
     const auto hasSafeGround = [&](float candidateX)
     {
         for (float horizontalOffset = -warriorCollider.x / 2.0f;
@@ -551,6 +560,7 @@ void LevelB::catchUpWarriorIfOffScreen()
         return true;
     };
 
+    // Try the preferred position before using a closer spot
     for (float candidateX = preferredPosition;
          candidateX <= maximumPosition;
          candidateX += sampleSpacing)
@@ -565,6 +575,7 @@ void LevelB::catchUpWarriorIfOffScreen()
 
     if (!foundCatchUpPosition)
     {
+        // Search backward when the preferred area has no safe landing spot
         const float fallbackStart =
             preferredPosition - sampleSpacing < maximumPosition
                 ? preferredPosition - sampleSpacing
@@ -596,6 +607,7 @@ void LevelB::catchUpWarriorIfOffScreen()
 
 bool LevelB::hasWarriorJumpClearance() const
 {
+    // Check for a clear path above the warrior
     const Vector2 position = mWarrior->getPosition();
     const Vector2 collider = mWarrior->getColliderDimensions();
     const float topY = position.y - collider.y / 2.0f;
@@ -704,6 +716,7 @@ void LevelB::renderWarrior()
 
 void LevelB::render()
 {
+    // Draw the scrolling background and level
     ClearBackground(ColorFromHex(mBGColourHexCode));
 
     const Vector2 playerPosition = mGameState.player->getPosition();
@@ -771,6 +784,7 @@ void LevelB::render()
 
 void LevelB::renderHealthBar()
 {
+    // Keep the health bar in a fixed position on screen
     const float screenLeft =
         mGameState.player->getPosition().x - mOrigin.x + 14.0f;
     const float screenTop = 12.0f;
@@ -796,6 +810,7 @@ void LevelB::renderHealthBar()
 
 void LevelB::shutdown()
 {
+    // Release the enemy, player, map, and level assets
     delete mWarrior;
     mWarrior = nullptr;
     delete mGameState.player;

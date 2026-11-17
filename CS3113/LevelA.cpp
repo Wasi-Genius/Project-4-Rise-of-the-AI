@@ -2,6 +2,7 @@
 
 namespace
 {
+// Build platforms and draw level sprites
 void addPlatform(
     unsigned int *levelData,
     int mapColumns,
@@ -93,8 +94,7 @@ void drawHuntressFrame(
 }
 }
 
-// The default and configured constructors pass this scene's coordinate
-// origin and background colour to the shared Scene base.
+// Provide default scene settings
 LevelA::LevelA() : Scene{ { 0.0f, 0.0f }, "#000000" } {}
 
 LevelA::LevelA(Vector2 origin, const char *bgColourHexCode)
@@ -107,6 +107,7 @@ LevelA::~LevelA()
 
 void LevelA::initialise()
 {
+    // Reset enemy animation state when the level starts
     mHuntressAnimation = HUNTRESS_IDLE;
     mHuntressAnimationFrame = 0;
     mHuntressAnimationTime = 0.0f;
@@ -114,6 +115,7 @@ void LevelA::initialise()
     mHuntressAttackTwoNext = false;
     mHuntressDamageApplied = false;
 
+    // Load music, sounds, and textures for this level
     mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 1 BGM.mp3");
     SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
@@ -137,6 +139,7 @@ void LevelA::initialise()
     mHuntressAttackOne = LoadTexture("assets/Huntress/Attack1.png");
     mHuntressAttackTwo = LoadTexture("assets/Huntress/Attack2.png");
 
+    // Create the map and both characters
     buildLevelData();
     mGameState.map = new Map(
         LEVEL_A_MAP_COLUMNS,
@@ -218,9 +221,11 @@ void LevelA::initialise()
 
 void LevelA::buildLevelData()
 {
+    // Main ground and gaps
     addPlatform(
         mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 0, 23, 15, 2
     );
+    // Raised platforms
     addPlatform(
         mLevelData, LEVEL_A_MAP_COLUMNS, LEVEL_A_MAP_ROWS, 27, 83, 15, 2
     );
@@ -259,6 +264,7 @@ void LevelA::update(float deltaTime)
         0
     );
 
+    // Move to the next level when the player reaches the statue
     if (mGameState.player->collidesWith(&mLevelExit))
     {
         mGameState.nextSceneID = LEVEL_B;
@@ -280,6 +286,7 @@ void LevelA::update(float deltaTime)
 
 void LevelA::updateHuntress(float deltaTime)
 {
+    // Stop the Huntress while her attack animation plays
     const bool isAttacking =
         mHuntressAnimation == HUNTRESS_ATTACK_ONE ||
         mHuntressAnimation == HUNTRESS_ATTACK_TWO;
@@ -415,6 +422,7 @@ LevelA::HuntressAnimation LevelA::getHuntressMovementAnimation(
 
 void LevelA::loseLife()
 {
+    // Reduce shared health and show the lose screen when it reaches zero
     if (gGameProgress.lives <= 0) return;
 
     gGameProgress.lives--;
@@ -463,6 +471,7 @@ void LevelA::animateHuntress(float deltaTime)
 
 void LevelA::render()
 {
+    // Draw the scrolling background and level
     ClearBackground(ColorFromHex(mBGColourHexCode));
 
     const Vector2 playerPosition = mGameState.player->getPosition();
@@ -512,6 +521,7 @@ void LevelA::render()
 
 void LevelA::renderHealthBar()
 {
+    // Keep the health bar in a fixed position on screen
     const float screenLeft =
         mGameState.player->getPosition().x - mOrigin.x + 14.0f;
     const float screenTop = 12.0f;
@@ -539,7 +549,7 @@ void LevelA::renderHealthBar()
 void LevelA::renderHuntress()
 {
     const Texture2D texture = getHuntressAnimationTexture();
-    // The sprite sheets leave transparent space below the Huntress.
+    // Adjust for transparent space below the Huntress sprite
     const float spriteFootY = 96.0f;
     Vector2 renderPosition = mHuntress->getPosition();
     renderPosition.y += mHuntress->getColliderDimensions().y / 2.0f +
@@ -557,8 +567,7 @@ void LevelA::renderHuntress()
 
 void LevelA::shutdown()
 {
-    // Clearing each resource after releasing it makes this safe to call when
-    // switching scenes and again from the destructor.
+    // Clear resources after releasing them so repeated shutdown is safe
     delete mHuntress;
     mHuntress = nullptr;
     delete mGameState.player;

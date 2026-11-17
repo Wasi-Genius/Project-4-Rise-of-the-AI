@@ -3,7 +3,7 @@
 
 #include "Map.h"
 
-enum Direction    { LEFT, UP, RIGHT, DOWN              }; // For walking
+enum Direction    { LEFT, UP, RIGHT, DOWN              }; // Movement directions
 enum EntityStatus { ACTIVE, INACTIVE                   };
 enum EntityType   { PLAYER, BLOCK, PLATFORM, NPC, NONE };
 enum AIType       { WANDERER, FOLLOWER, FLYER          };
@@ -12,6 +12,7 @@ enum AIState      { WALKING, IDLE, FOLLOWING           };
 class Entity
 {
 private:
+    // Position and movement values
     Vector2 mPosition;
     Vector2 mMovement;
     Vector2 mVelocity;
@@ -21,6 +22,7 @@ private:
     Vector2 mColliderDimensions;
     Vector2 mColliderOffset{ 0.0f, 0.0f };
 
+    // Sprite textures and animation data
     Texture2D   mTexture;
     Texture2D   mIdleTexture{};
     Texture2D   mTurnAroundTexture{};
@@ -53,11 +55,13 @@ private:
     int   mIdleFrameSpeed = 8;
     float mAngle;
 
+    // Collision state for the current update
     bool mIsCollidingTop    = false;
     bool mIsCollidingBottom = false;
     bool mIsCollidingRight  = false;
     bool mIsCollidingLeft   = false;
 
+    // Entity and AI types
     EntityStatus mEntityStatus = ACTIVE;
     EntityType   mEntityType;
 

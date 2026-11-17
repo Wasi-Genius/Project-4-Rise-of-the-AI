@@ -2,16 +2,16 @@
 
 Color ColorFromHex(const char *hex)
 {
-    // Skip leading '#', if present
+    // Skip the optional leading marker
     if (hex[0] == '#') hex++;
 
-    // Default alpha = 255 (opaque)
+    // Use full opacity when no alpha value is provided
     unsigned int r = 0,
                  g = 0,
                  b = 0,
                  a = 255;
 
-    // 6‑digit form: RRGGBB
+    // Read a six digit RGB color
     if (sscanf(hex, "%02x%02x%02x", &r, &g, &b) == 3)
     {
         return Color{ static_cast<unsigned char>(r),
@@ -20,7 +20,7 @@ Color ColorFromHex(const char *hex)
                       static_cast<unsigned char>(a) };
     }
 
-    // 8‑digit form: RRGGBBAA
+    // Read an eight digit RGBA color
     if (sscanf(hex, "%02x%02x%02x%02x", &r, &g, &b, &a) == 4)
     {
         return Color{ static_cast<unsigned char>(r),
@@ -29,15 +29,11 @@ Color ColorFromHex(const char *hex)
                       static_cast<unsigned char>(a) };
     }
 
-    // Fallback – return white so you notice something went wrong
+    // Use white when the color string is invalid
     return RAYWHITE;
 }
 
-/**
- * @brief Calculates and returns the magnitude of a 2D vector.
- *
- * @param vector Any 2D raylib vector.
- */
+// Return the length of a vector
 float GetLength(const Vector2 vector)
 {
     return sqrtf(
@@ -45,15 +41,7 @@ float GetLength(const Vector2 vector)
     );
 }
 
-/**
- * @brief Mutates two dimensional vector to become its unit vector counterpart,
- * also known as a direction vector, retains the original vector’s orientation
- * but has a standardised length.
- *
- * @see https://hogonext.com/how-to-normalize-a-vector/
- *
- * @param vector Any 2D raylib vector.
- */
+// Change a vector to unit length while keeping its direction
 void Normalise(Vector2 *vector)
 {
     float magnitude = GetLength(*vector);
@@ -62,30 +50,10 @@ void Normalise(Vector2 *vector)
     vector->y /= magnitude;
 }
 
-/**
- * @brief Calculates and returns the UV coordinates and dimensions of a
- * rectangle slice from a texture based on the given index, number of rows, and
- * number of columns.
- *
- * @param texture a pointer to a `Texture2D` struct, contains information about
- * a 2D texture such as its width and height.
- * @param index represents the index of the specific slice within a texture
- * atlas. Each slice is a sub-image within the texture atlas that contains
- * multiple images arranged in rows and columns.
- * @param rows represents the number of rows in which the texture is divided.
- * This parameter is used to calculate the vertical position of the texture
- * slice based on the index provided.
- * @param cols represents the number of columns in a grid layout. It is used in
- * the `getUVRectangle` function to calculate the UV coordinates for a specific
- * index within the grid.
- *
- * @return a `Rectangle` struct that represents a portion of a texture based on
- * the provided parameters. The `Rectangle` struct contains the top-left
- * x-coordinate, top-left y-coordinate, width, and height of the specified
- * portion of the texture.
- */
+// Find one cell in a texture atlas
 Rectangle getUVRectangle(const Texture2D *texture, int index, int rows, int cols)
 {
+    // Calculate the source rectangle for the selected atlas cell
     float uCoord = static_cast<float>(index % cols) / static_cast<float>(cols);
     uCoord *= texture->width;
 
@@ -96,9 +64,9 @@ Rectangle getUVRectangle(const Texture2D *texture, int index, int rows, int cols
     float sliceHeight = texture->height / static_cast<float>(rows);
 
     return {
-        uCoord,     // top-left x-coord
-        vCoord,     // top-left y-coord
-        sliceWidth, // width of slice
-        sliceHeight // height of slice
+        uCoord,
+        vCoord,
+        sliceWidth,
+        sliceHeight
     };
 }

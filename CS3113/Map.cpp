@@ -26,8 +26,7 @@ Map::~Map()
 
 void Map::build()
 {
-    // The origin is the map's centre, so subtracting half its pixel dimensions
-    // gives the top-left world coordinate used by both drawing and collision.
+    // Find the map edges from its center and dimensions
     mLeftBoundary = mOrigin.x - mMapColumns * mTileSize / 2.0f;
     mRightBoundary = mLeftBoundary + mMapColumns * mTileSize;
     mTopBoundary = mOrigin.y - mMapRows * mTileSize / 2.0f;
@@ -43,8 +42,7 @@ void Map::build()
         return;
     }
 
-    // Precompute each atlas cell's source rectangle. Tile IDs in level data
-    // start at 1, so render() converts them to zero-based vector indices.
+    // Cache one source rectangle for each atlas tile
     const int atlasTileCount = mTextureColumns * mTextureRows;
     for (int tileIndex = 0; tileIndex < atlasTileCount; tileIndex++)
     {
@@ -58,8 +56,7 @@ void Map::render()
 {
     if (mLevelData == nullptr || mTextureAreas.empty()) return;
 
-    // The level array is row-major: each consecutive group of mapColumns
-    // values describes one horizontal row. Zero is the empty-cell sentinel.
+    // Read tile IDs in row order and skip empty cells
     for (int row = 0; row < mMapRows; row++)
     {
         for (int column = 0; column < mMapColumns; column++)
@@ -83,7 +80,7 @@ void Map::render()
                 mTileSize
             };
 
-            // DrawTexturePro scales an atlas cell into a world-space map cell.
+            // Draw the atlas cell in the matching map position
             DrawTexturePro(
                 mTextureAtlas, source, destination, { 0.0f, 0.0f }, 0.0f, WHITE
             );
@@ -98,8 +95,7 @@ bool Map::isSolidTileAt(Vector2 position, float *xOverlap, float *yOverlap)
     *xOverlap = 0.0f;
     *yOverlap = 0.0f;
 
-    // Points outside the map are empty. This also prevents invalid row/column
-    // indices when the player walks or falls past an edge.
+    // Ignore probes outside the map
     if (position.x < mLeftBoundary || position.x >= mRightBoundary ||
         position.y < mTopBoundary || position.y >= mBottomBoundary ||
         mLevelData == nullptr || mTileSize <= 0.0f)
@@ -115,14 +111,13 @@ bool Map::isSolidTileAt(Vector2 position, float *xOverlap, float *yOverlap)
     );
     const unsigned int tileID = mLevelData[row * mMapColumns + column];
 
-    // Empty cells do not block movement; any non-zero map ID is a solid tile.
+    // Empty cells do not block movement
     if (tileID == 0) return false;
 
     const float tileLeft = mLeftBoundary + column * mTileSize;
     const float tileTop = mTopBoundary + row * mTileSize;
 
-    // These penetration distances let Entity move its probe back to the
-    // nearest tile edge when resolving a collision.
+    // Return the distance to the nearest tile edge
     *xOverlap = (position.x - tileLeft < mTileSize / 2.0f)
         ? position.x - tileLeft
         : tileLeft + mTileSize - position.x;

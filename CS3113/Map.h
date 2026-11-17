@@ -6,6 +6,7 @@
 class Map
 {
 private:
+    // Map dimensions and tile data
     int mMapColumns; // number of columns in map
     int mMapRows;    // number of rows in map
 
@@ -17,7 +18,8 @@ private:
     int mTextureColumns; // number of columns in texture atlas
     int mTextureRows;    // number of rows in texture atlas
 
-    std::vector<Rectangle> mTextureAreas; // texture areas for each tile
+    // Atlas cells and map world bounds
+    std::vector<Rectangle> mTextureAreas; // atlas source rectangle for each tile
     Vector2                mOrigin;       // center of the map in world coordinates
 
     float mLeftBoundary;   // left boundary of the map in world coordinates

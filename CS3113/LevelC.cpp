@@ -6,6 +6,7 @@ namespace
     const int LEVEL_C_WIZARD_SPEED = 120;
     const float LEVEL_C_WIZARD_DAMAGE_COOLDOWN = 1.5f;
 
+    // Build a platform from its top and fill tiles
     void addCavePlatform(
         unsigned int *levelData,
         int mapColumns,
@@ -15,7 +16,7 @@ namespace
         int topRow,
         int fillRows)
     {
-        // Brown Floor Tiles IDs: 55-57 for platform tops.
+        // Use the matching edge tile at each end
         for (int column = startColumn; column <= endColumn; column++)
         {
             unsigned int topTile = 56;
@@ -45,7 +46,7 @@ namespace
         int endColumn,
         bool pointsUp)
     {
-        // Keep the map cell solid
+        // Keep each spike cell solid for collision
         for (int column = startColumn; column <= endColumn; column++)
         {
             const int tileIndex = row * mapColumns + column;
@@ -101,7 +102,7 @@ void LevelC::initialise()
     mPlayerOnSpikes = false;
     mGameState.nextSceneID = NO_SCENE;
 
-    // Level 3 audio and image assets; replace these paths to use different art.
+    // Load music, sounds, and textures for this level
     mGameState.bgm = LoadMusicStream("assets/BGM Music/Level 3 BGM.mp3");
     SetMusicVolume(mGameState.bgm, 0.5f);
     PlayMusicStream(mGameState.bgm);
@@ -127,6 +128,7 @@ void LevelC::initialise()
     mWizardWasTouchingPlayer = false;
     mWizardDamageCooldown = 0.0f;
 
+    // Create the map and player before placing the exit and Wizard
     buildLevelData();
     mGameState.map = new Map(
         LEVEL_C_MAP_COLUMNS,
@@ -211,7 +213,7 @@ void LevelC::buildLevelData()
         mGroundSpikeTiles[tileIndex] = false;
     }
 
-    // Main route: separate ground runs leave short gaps for jumps and falls.
+    // Main ground runs leave gaps for jumps
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 0, 20, 18, 3);
     addCavePlatform(
@@ -225,7 +227,7 @@ void LevelC::buildLevelData()
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 98, 123, 18, 3);
 
-    // Raised stepping platforms
+    // Raised platforms form the upper route
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 7, 11, 15, 0);
     addCavePlatform(
@@ -255,7 +257,7 @@ void LevelC::buildLevelData()
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 118, 121, 15, 0);
 
-    // Roofs use the same tile helper, with fill rows extending downward.
+    // Roofs use filled platforms above the route
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 21, 40, 7, 2);
     addCavePlatform(
@@ -263,7 +265,7 @@ void LevelC::buildLevelData()
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 99, 121, 9, 1);
 
-    // Ground spikes face up; overhead hazards keep their original orientation.
+    // Ground spikes face up while ceiling spikes keep their default direction
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
         LEVEL_C_MAP_COLUMNS, 18, 12, 13, true);
@@ -303,6 +305,7 @@ void LevelC::update(float deltaTime)
         nullptr,
         0);
 
+    // Reset the player after a fall
     if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
     {
         loseLife();
@@ -315,6 +318,7 @@ void LevelC::update(float deltaTime)
         mPlayerOnSpikes = false;
     }
 
+    // Finish the game when the player reaches the statue
     if (mGameState.player->collidesWith(&mLevelExit))
     {
         mGameState.nextSceneID = WIN_SCREEN;
@@ -325,7 +329,7 @@ void LevelC::update(float deltaTime)
     if (mGameState.nextSceneID == LOSE_SCREEN)
         return;
 
-    // Only charge once until the player leaves the current spike contact.
+    // Charge once until the player leaves the spikes
     const bool touchingSpikes = isPlayerTouchingSpikes();
     if (touchingSpikes && !mPlayerOnSpikes)
     {
@@ -338,7 +342,7 @@ void LevelC::update(float deltaTime)
 
 bool LevelC::isPlayerTouchingSpikes() const
 {
-    // Check the player's actual collider against the separate spike flags.
+    // Check the player collider against the spike tiles
     const Vector2 colliderPosition =
         mGameState.player->getColliderPosition();
     const Vector2 colliderDimensions =
@@ -400,7 +404,7 @@ bool LevelC::isPlayerTouchingSpikes() const
 
 void LevelC::loseLife()
 {
-    // Falls and spikes share the game's persistent lives and hurt sound
+    // Use shared lives and sound for every hazard
     if (gGameProgress.lives > 0)
     {
         gGameProgress.lives--;
@@ -413,6 +417,7 @@ void LevelC::loseLife()
 
 void LevelC::render()
 {
+    // Draw the scrolling background and map
     ClearBackground(ColorFromHex(mBGColourHexCode));
 
     const Vector2 playerPosition = mGameState.player->getPosition();
@@ -432,7 +437,7 @@ void LevelC::render()
     mGameState.map->render();
     renderSpikes();
 
-    // Each decoration sits on the first solid platform or floor tile below it.
+    // Place decorations on the first solid tile below them
     drawDecorationAtGround(
         mDecorAtlas, {64.0f, 0.0f, 32.0f, 32.0f},
         8.5f, 1.6f);
@@ -443,8 +448,7 @@ void LevelC::render()
         mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
         48.5f, 1.7f);
     
-
-    // Scarecrow 
+    // Place the scarecrow on a raised platform
     drawDecorationAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
         84.5f, 1.0f, 30.0f);
@@ -469,6 +473,7 @@ void LevelC::render()
 
 void LevelC::updateWizard(float deltaTime)
 {
+    // Count down the gap between Wizard hits
     if (mWizardDamageCooldown > 0.0f)
     {
         mWizardDamageCooldown -= deltaTime;
@@ -521,6 +526,7 @@ void LevelC::updateWizard(float deltaTime)
         animateWizard(deltaTime);
     }
 
+    // Damage the player once when contact begins
     if (touchingPlayer && !mWizardWasTouchingPlayer)
     {
         mWizardWasTouchingPlayer = true;
@@ -632,7 +638,7 @@ float LevelC::getGroundYAtColumn(int column) const
 {
     const float mapTop = mGameState.map->getTopBoundary();
 
-    // Rows 12-18 contain the raised platforms and main floor; roofs are above.
+    // Find the first platform or floor tile below the decoration
     for (int row = 12; row <= 18; row++)
     {
         if (mLevelData[row * LEVEL_C_MAP_COLUMNS + column] != 0)
@@ -649,6 +655,7 @@ void LevelC::drawDecorationAtGround(
     float scale,
     float yOffset)
 {
+    // Convert the tile column to world coordinates
     const float centerX =
         mGameState.map->getLeftBoundary() + tileColumn * LEVEL_C_TILE_SIZE;
     const int column = static_cast<int>(tileColumn);
@@ -659,6 +666,7 @@ void LevelC::drawDecorationAtGround(
 
 void LevelC::renderSpikes()
 {
+    // Draw each hazard with its assigned direction
     const Texture2D texture = mGameState.map->getTextureAtlas();
     const float tileSize = mGameState.map->getTileSize();
     const float mapLeft = mGameState.map->getLeftBoundary();
@@ -672,7 +680,7 @@ void LevelC::renderSpikes()
             if (!mSpikeTiles[tileIndex])
                 continue;
 
-            // Alternate the two spike atlas tiles used by the original layout.
+            // Alternate between the two spike tiles
             const int spikeTileID = column % 2 == 0 ? 89 : 90;
             const Rectangle source = getUVRectangle(
                 &texture,
@@ -697,6 +705,7 @@ void LevelC::renderSpikes()
 
 void LevelC::renderHealthBar()
 {
+    // Keep the health bar in a fixed position on screen
     const float screenLeft =
         mGameState.player->getPosition().x - mOrigin.x + 14.0f;
     const float fillWidth = 82.0f * (gGameProgress.lives / 5.0f);
@@ -719,6 +728,7 @@ void LevelC::renderHealthBar()
 
 void LevelC::shutdown()
 {
+    // Release the player, Wizard, map, and level assets
     delete mGameState.player;
     mGameState.player = nullptr;
     delete mWizard;

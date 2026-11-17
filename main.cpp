@@ -38,11 +38,11 @@ float gPreviousTicks = 0.0f;
 float gTimeAccumulator = 0.0f;
 Camera2D gCamera = {};
 
-// The map owns every allocated scene. The current pointer only selects which
-// scene receives input, updates, and rendering this frame.
+// The scene map owns every scene while this pointer selects the active one
 Scene *gCurrentScene = nullptr;
 std::map<SceneID, Scene *> gLevels;
 
+// Shut down the old scene before loading the new one
 void switchToScene(Scene *scene)
 {
     if (scene == nullptr)
@@ -69,7 +69,7 @@ void initialise()
     InitAudioDevice();
     gGameProgress.hurtSound = LoadSound("assets/Misc. Sound/Hurt Sound.mp3");
 
-    // Named keys make the scene collection readable and let scenes request a destination without relying on fragile numeric array positions.
+    // Store each scene under its named ID
     gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#1b4998");
     gLevels[LEVEL_A] = new LevelA(ORIGIN, "#C0897E");
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
@@ -78,14 +78,13 @@ void initialise()
     gLevels[WIN_SCREEN] = new WinScene(ORIGIN, "#008000");
     switchToScene(gLevels[MAIN_MENU]);
 
-    // Camera2D keeps the player horizontally centred while preserving the
-    // lesson's fixed vertical camera position.
+    // Keep the player centered horizontally in the camera
     gCamera.offset = ORIGIN;
     gCamera.rotation = 0.0f;
     gCamera.zoom = 1.0f;
     SetTargetFPS(FPS);
 
-    // Start measuring frame time after loading the initial scene.
+    // Start the frame timer after the first scene loads
     gPreviousTicks = static_cast<float>(GetTime());
 }
 
@@ -101,7 +100,7 @@ void processInput()
 
     if (player != nullptr)
     {
-        // These debug shortcuts work in gameplay and preserve shared lives.
+        // Number keys switch levels without resetting lives
         SceneID selectedLevel = NO_SCENE;
         if (IsKeyPressed(KEY_ONE))
             selectedLevel = LEVEL_A;
@@ -129,7 +128,7 @@ void processInput()
             PlaySound(gCurrentScene->getState().jumpSound);
         }
 
-        // Normalising prevents diagonal input from increasing movement speed.
+        // Normalize diagonal input to keep its speed consistent
         if (GetLength(player->getMovement()) > 1.0f)
             player->normaliseMovement();
     }
@@ -142,7 +141,7 @@ void processInput()
 
 void update()
 {
-    // Delta time is elapsed seconds. The accumulator carries any leftover fraction forward so every physics update uses the same fixed interval.
+    // Carry leftover time forward so physics uses a fixed update interval
     const float ticks = static_cast<float>(GetTime());
     float deltaTime = ticks - gPreviousTicks;
     gPreviousTicks = ticks;
@@ -176,8 +175,7 @@ void render()
 
 void shutdown()
 {
-    // Deleting scenes through the base pointer demonstrates virtual
-    // destruction. Their destructors perform safe, idempotent cleanup.
+    // Delete each scene through the shared base class
     for (std::pair<const SceneID, Scene *> &entry : gLevels)
         delete entry.second;
     gLevels.clear();
@@ -198,8 +196,7 @@ int main(void)
         processInput();
         update();
 
-        // Scenes request a transition by setting nextSceneID; the game loop
-        // looks up that ID and performs the switch outside the scene itself.
+        // Handle scene changes after the current update finishes
         const SceneID nextSceneID = gCurrentScene->getState().nextSceneID;
         if (nextSceneID != NO_SCENE)
         {

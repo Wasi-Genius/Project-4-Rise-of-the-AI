@@ -16,7 +16,7 @@
 
 enum AppStatus   { TERMINATED, RUNNING };
 enum TextureType { SINGLE, ATLAS       };
-// NO_SCENE is a distinct sentinel so scene ID zero remains a valid destination.
+// NO_SCENE keeps scene ID zero available for a real scene
 enum SceneID
 {
     NO_SCENE = -1,

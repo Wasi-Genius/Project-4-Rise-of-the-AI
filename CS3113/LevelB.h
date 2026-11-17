@@ -6,6 +6,7 @@
 class LevelB : public Scene
 {
 private:
+    // Warrior animation states
     enum WarriorAnimation
     {
         WARRIOR_IDLE,
@@ -24,6 +25,7 @@ private:
         LEVEL_B_MAP_COLUMNS * LEVEL_B_MAP_ROWS
     ] = {};
 
+    // Level and character textures
     Texture2D mBackground{};
     Texture2D mHealthBar{};
     Texture2D mBlueBirch{};
@@ -38,6 +40,7 @@ private:
     Texture2D mWarriorFall{};
     Texture2D mWarriorAttackOne{};
     Texture2D mWarriorAttackTwo{};
+    // Enemy and level positions
     Entity *mWarrior = nullptr;
     Entity mLevelExit;
     Vector2 mPlayerStartPosition{};

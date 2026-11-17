@@ -3,7 +3,7 @@
 
 #include "Entity.h"
 
-// These values describe the shared map and physics units used by both levels.
+// Shared map and physics values
 constexpr int SCENE_MAP_COLUMNS = 14,
               SCENE_MAP_ROWS = 8;
 
@@ -19,8 +19,7 @@ struct GameProgress
 
 extern GameProgress gGameProgress;
 
-// A scene groups resources that should exist only while that scene is active.
-// The next ID is an enum so NO_SCENE cannot be confused with a real level.
+// State owned by the active scene
 struct GameState
 {
     Entity *player = nullptr;
@@ -30,8 +29,7 @@ struct GameState
     SceneID nextSceneID = NO_SCENE;
 };
 
-// Every scene must load, update, draw, and release its own resources.
-// Pure virtual methods make Scene an interface-like abstract base class.
+// Each scene loads, updates, draws, and releases its own resources
 class Scene
 {
 protected:
@@ -49,8 +47,7 @@ public:
     virtual void render() = 0;
     virtual void shutdown() = 0;
 
-    // Return a read-only reference so callers can inspect scene state without
-    // copying the owning pointers inside GameState.
+    // Read scene state without copying its pointers
     const GameState &getState() const { return mGameState; }
     void requestSceneChange(SceneID sceneID) { mGameState.nextSceneID = sceneID; }
     Vector2 getOrigin() const { return mOrigin; }
