@@ -65,16 +65,6 @@ private:
     AIState mAIState;
 
     bool isColliding(Entity *other) const;
-    Vector2 getColliderPosition() const
-    {
-        return {
-            mPosition.x + (mDirection == LEFT
-                ? -mColliderOffset.x
-                : mColliderOffset.x),
-            mPosition.y + mColliderOffset.y
-        };
-    }
-
     void checkCollisionY(Entity *collidableEntities, int collisionCheckCount);
     void checkCollisionY(Map *map);
 
@@ -152,6 +142,15 @@ public:
     Vector2     getAcceleration()          const { return mAcceleration;          }
     Vector2     getScale()                 const { return mScale;                 }
     Vector2     getColliderDimensions()    const { return mColliderDimensions;    }
+    Vector2     getColliderPosition()      const
+    {
+        return {
+            mPosition.x + (mDirection == LEFT
+                ? -mColliderOffset.x
+                : mColliderOffset.x),
+            mPosition.y + mColliderOffset.y
+        };
+    }
     Vector2     getSpriteSheetDimensions() const { return mSpriteSheetDimensions; }
     Texture2D   getTexture()               const { return mTexture;               }
     TextureType getTextureType()           const { return mTextureType;           }

@@ -1,5 +1,6 @@
 #include "CS3113/LevelA.h"
 #include "CS3113/LevelB.h"
+#include "CS3113/LevelC.h"
 #include "CS3113/LoseScene.h"
 #include "CS3113/MenuScene.h"
 
@@ -53,6 +54,7 @@ void initialise()
     gLevels[MAIN_MENU] = new MenuScene(ORIGIN, "#1b4998");
     gLevels[LEVEL_A] = new LevelA(ORIGIN, "#C0897E");
     gLevels[LEVEL_B] = new LevelB(ORIGIN, "#011627");
+    gLevels[LEVEL_C] = new LevelC(ORIGIN, "#10121F");
     gLevels[LOSE_SCREEN] = new LoseScene(ORIGIN, "#A00000");
     switchToScene(gLevels[MAIN_MENU]);
 

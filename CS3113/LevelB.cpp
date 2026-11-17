@@ -191,6 +191,12 @@ void LevelB::initialise()
     mGameState.player->setColliderOffset({ -4.0f, 20.0f });
     mGameState.player->setAcceleration({ 0.0f, SCENE_GRAVITY });
 
+    mLevelExit.setColliderDimensions({ 52.0f, 82.0f });
+    mLevelExit.setPosition({
+        mGameState.map->getRightBoundary() - LEVEL_B_TILE_SIZE,
+        groundY - 41.0f
+    });
+
     mWarrior = new Entity();
     mWarrior->setScale({ 162.0f, 162.0f });
     mWarrior->setColliderDimensions({ 34.0f, 42.0f });
@@ -275,6 +281,12 @@ void LevelB::update(float deltaTime)
         nullptr,
         0
     );
+
+    if (mGameState.player->collidesWith(&mLevelExit))
+    {
+        mGameState.nextSceneID = LEVEL_C;
+        return;
+    }
 
     if (mGameState.player->getPosition().y > SCENE_FALL_THRESHOLD)
     {

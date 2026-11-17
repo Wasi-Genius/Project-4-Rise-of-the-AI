@@ -39,6 +39,7 @@ private:
     Texture2D mWarriorAttackOne{};
     Texture2D mWarriorAttackTwo{};
     Entity *mWarrior = nullptr;
+    Entity mLevelExit;
     Vector2 mPlayerStartPosition{};
     Vector2 mWarriorStartPosition{};
     WarriorAnimation mWarriorAnimation = WARRIOR_IDLE;
