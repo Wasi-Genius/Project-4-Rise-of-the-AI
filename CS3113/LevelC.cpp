@@ -11,7 +11,7 @@ namespace
         int topRow,
         int fillRows)
     {
-        // Brown Floor Tiles IDs: 55-57 for platform tops and 65 for dirt fill.
+        // Brown Floor Tiles IDs: 55-57 for platform tops.
         for (int column = startColumn; column <= endColumn; column++)
         {
             unsigned int topTile = 56;
@@ -22,9 +22,6 @@ namespace
 
             levelData[topRow * mapColumns + column] = topTile;
 
-            for (int depth = 1; depth <= fillRows && topRow + depth < mapRows;
-                 depth++)
-                levelData[(topRow + depth) * mapColumns + column] = 65;
         }
     }
 
@@ -38,7 +35,7 @@ namespace
         int endColumn,
         bool pointsUp)
     {
-        // Keep the map cell solid; LevelC draws the spike over it separately.
+        // Keep the map cell solid
         for (int column = startColumn; column <= endColumn; column++)
         {
             const int tileIndex = row * mapColumns + column;
@@ -62,56 +59,6 @@ namespace
             {0.0f, 0.0f},
             0.0f,
             WHITE);
-    }
-
-    void drawCaveDirtPatch(
-        Texture2D texture,
-        float x,
-        float y,
-        int columns,
-        int rows,
-        float tileSize)
-    {
-        // BG Dirt2 is a 192x128 atlas of 32x32 pieces. The rectangles below crop
-        // its edges and repeat the plain center to make a continuous cave wall.
-        for (int row = 0; row < rows; row++)
-        {
-            for (int column = 0; column < columns; column++)
-            {
-                // The center tile is crop (96,48); edge crops are selected below.
-                Rectangle source = {96.0f, 48.0f, 32.0f, 32.0f};
-
-                if (row == 0)
-                {
-                    if (column == 0)
-                        source = {32.0f, 32.0f, 32.0f, 32.0f};
-                    else if (column == columns - 1)
-                        source = {160.0f, 32.0f, 32.0f, 32.0f};
-                    else
-                        source = {96.0f, 32.0f, 32.0f, 32.0f};
-                }
-                else if (row == rows - 1)
-                {
-                    if (column == 0)
-                        source = {32.0f, 64.0f, 32.0f, 32.0f};
-                    else if (column == columns - 1)
-                        source = {160.0f, 64.0f, 32.0f, 32.0f};
-                    else
-                        source = {96.0f, 64.0f, 32.0f, 32.0f};
-                }
-                else if (column == 0)
-                    source = {0.0f, 32.0f, 32.0f, 32.0f};
-                else if (column == columns - 1)
-                    source = {160.0f, 48.0f, 32.0f, 32.0f};
-
-                drawCaveDirtTile(
-                    texture,
-                    source,
-                    x + column * tileSize,
-                    y + row * tileSize,
-                    tileSize);
-            }
-        }
     }
 
     void drawTexture(Texture2D texture, Rectangle destination)
@@ -459,19 +406,6 @@ void LevelC::render()
     const float mapLeft = mGameState.map->getLeftBoundary();
     const float mapTop = mGameState.map->getTopBoundary();
     const float groundY = mapTop + 18.0f * LEVEL_C_TILE_SIZE;
-    // Each patch is built from cropped 32px BG Dirt2 tiles, behind the map.
-    drawCaveDirtPatch(
-        mCaveDirt, mapLeft + 18.0f * LEVEL_C_TILE_SIZE,
-        mapTop + 4.0f * LEVEL_C_TILE_SIZE, 26, 5, LEVEL_C_TILE_SIZE);
-    drawCaveDirtPatch(
-        mCaveDirt, mapLeft + 44.0f * LEVEL_C_TILE_SIZE,
-        mapTop + 6.0f * LEVEL_C_TILE_SIZE, 23, 5, LEVEL_C_TILE_SIZE);
-    drawCaveDirtPatch(
-        mCaveDirt, mapLeft + 69.0f * LEVEL_C_TILE_SIZE,
-        mapTop + 4.0f * LEVEL_C_TILE_SIZE, 26, 5, LEVEL_C_TILE_SIZE);
-    drawCaveDirtPatch(
-        mCaveDirt, mapLeft + 96.0f * LEVEL_C_TILE_SIZE,
-        mapTop + 5.0f * LEVEL_C_TILE_SIZE, 27, 5, LEVEL_C_TILE_SIZE);
 
     mGameState.map->render();
     renderSpikes();
@@ -513,15 +447,16 @@ void LevelC::render()
     // Scarecrow atlas crop, placed in two different sections of the level.
     drawAtlasItemAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        mapLeft + 37.0f * LEVEL_C_TILE_SIZE, groundY, 1.0f);
+        mapLeft + 37.0f * LEVEL_C_TILE_SIZE, groundY, 5.0f);
     drawAtlasItemAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        mapLeft + 84.0f * LEVEL_C_TILE_SIZE, groundY, 1.0f);
+        mapLeft + 84.0f * LEVEL_C_TILE_SIZE, groundY, 5.0f);
 
     // Small debris is near the middle; the statue marks the far end.
     drawAtlasItemAtGround(
         mDecorAtlas, {32.0f, 224.0f, 64.0f, 32.0f},
         mapLeft + 58.0f * LEVEL_C_TILE_SIZE, groundY, 1.0f);
+
     drawAtlasItemAtGround(
         mAngelStatue,
         {0.0f, 0.0f, static_cast<float>(mAngelStatue.width),

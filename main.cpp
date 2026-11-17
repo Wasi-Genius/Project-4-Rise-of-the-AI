@@ -71,10 +71,31 @@ void initialise()
 
 void processInput()
 {
+    if (IsKeyPressed(KEY_Q) || WindowShouldClose())
+    {
+        gAppStatus = TERMINATED;
+        return;
+    }
+
     Entity *player = gCurrentScene->getState().player;
 
     if (player != nullptr)
     {
+        // These debug shortcuts work in gameplay and preserve shared lives.
+        SceneID selectedLevel = NO_SCENE;
+        if (IsKeyPressed(KEY_ONE))
+            selectedLevel = LEVEL_A;
+        else if (IsKeyPressed(KEY_TWO))
+            selectedLevel = LEVEL_B;
+        else if (IsKeyPressed(KEY_THREE))
+            selectedLevel = LEVEL_C;
+
+        if (selectedLevel != NO_SCENE)
+        {
+            switchToScene(gLevels[selectedLevel]);
+            return;
+        }
+
         player->resetMovement();
 
         if (IsKeyDown(KEY_A))
@@ -97,9 +118,6 @@ void processInput()
         gGameProgress.lives = 5;
         gCurrentScene->requestSceneChange(LEVEL_A);
     }
-
-    if (IsKeyPressed(KEY_Q) || WindowShouldClose())
-        gAppStatus = TERMINATED;
 }
 
 void update()
