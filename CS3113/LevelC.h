@@ -15,6 +15,13 @@ private:
     unsigned int mLevelData[
         LEVEL_C_MAP_COLUMNS * LEVEL_C_MAP_ROWS
     ] = {};
+    // Separate spike flags let solid map cells render with the right orientation.
+    bool mSpikeTiles[
+        LEVEL_C_MAP_COLUMNS * LEVEL_C_MAP_ROWS
+    ] = {};
+    bool mGroundSpikeTiles[
+        LEVEL_C_MAP_COLUMNS * LEVEL_C_MAP_ROWS
+    ] = {};
 
     // Textures loaded and released by this scene.
     Texture2D mBackground{};
@@ -41,6 +48,7 @@ private:
     void buildLevelData();
     bool isPlayerTouchingSpikes() const;
     void loseLife();
+    void renderSpikes();
     void renderHealthBar();
 };
 
