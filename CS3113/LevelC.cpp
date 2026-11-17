@@ -178,25 +178,21 @@ void LevelC::initialise()
     const float statueWidth = mAngelStatue.width * LEVEL_C_STATUE_SCALE;
     const float statueHeight = mAngelStatue.height * LEVEL_C_STATUE_SCALE;
     const float statueColumn = LEVEL_C_MAP_COLUMNS -
-        statueWidth / (2.0f * LEVEL_C_TILE_SIZE);
+                               statueWidth / (2.0f * LEVEL_C_TILE_SIZE);
     const float statueX =
         mGameState.map->getLeftBoundary() +
         statueColumn * LEVEL_C_TILE_SIZE;
     const float statueGroundY =
         getGroundYAtColumn(static_cast<int>(statueColumn));
-    mLevelExit.setPosition({
-        statueX,
-        statueGroundY - statueHeight / 2.0f
-    });
+    mLevelExit.setPosition({statueX,
+                            statueGroundY - statueHeight / 2.0f});
     mLevelExit.setColliderDimensions({statueWidth, statueHeight});
 
     mWizard = new Entity();
     mWizard->setScale({220.0f, 220.0f});
     mWizard->setColliderDimensions({64.0f, 82.0f});
-    mWizard->setPosition({
-        mGameState.map->getLeftBoundary() + 32.0f * LEVEL_C_TILE_SIZE,
-        mGameState.map->getTopBoundary() + 8.0f * LEVEL_C_TILE_SIZE
-    });
+    mWizard->setPosition({mGameState.map->getLeftBoundary() + 32.0f * LEVEL_C_TILE_SIZE,
+                          mGameState.map->getTopBoundary() + 8.0f * LEVEL_C_TILE_SIZE});
     mWizard->setEntityType(NPC);
     mWizard->setAIType(FLYER);
     mWizard->setAIState(FOLLOWING);
@@ -229,7 +225,7 @@ void LevelC::buildLevelData()
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 98, 123, 18, 3);
 
-    // Raised stepping platforms make the route harder than the earlier levels.
+    // Raised stepping platforms
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 7, 11, 15, 0);
     addCavePlatform(
@@ -263,8 +259,6 @@ void LevelC::buildLevelData()
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 21, 40, 7, 2);
     addCavePlatform(
-        mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 47, 64, 10, 1);
-    addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 72, 91, 7, 2);
     addCavePlatform(
         mLevelData, LEVEL_C_MAP_COLUMNS, LEVEL_C_MAP_ROWS, 99, 121, 9, 1);
@@ -291,9 +285,6 @@ void LevelC::buildLevelData()
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
         LEVEL_C_MAP_COLUMNS, 10, 31, 33, false);
-    addSpikeRun(
-        mLevelData, mSpikeTiles, mGroundSpikeTiles,
-        LEVEL_C_MAP_COLUMNS, 12, 53, 54, false);
     addSpikeRun(
         mLevelData, mSpikeTiles, mGroundSpikeTiles,
         LEVEL_C_MAP_COLUMNS, 10, 80, 82, false);
@@ -458,46 +449,22 @@ void LevelC::render()
         mDecorAtlas, {64.0f, 32.0f, 32.0f, 32.0f},
         103.5f, 1.7f);
 
-    // Large stone piles are drawn from separate atlas cuts and spread out.
-    drawDecorationAtGround(
-        mDecorAtlas, {0.0f, 288.0f, 64.0f, 64.0f},
-        16.5f, 1.1f);
-    drawDecorationAtGround(
-        mDecorAtlas, {64.0f, 288.0f, 64.0f, 64.0f},
-        43.5f, 1.1f);
-    drawDecorationAtGround(
-        mDecorAtlas, {128.0f, 288.0f, 64.0f, 64.0f},
-        66.5f, 1.1f);
-    drawDecorationAtGround(
-        mDecorAtlas, {0.0f, 288.0f, 64.0f, 64.0f},
-        92.5f, 1.1f);
-    drawDecorationAtGround(
-        mDecorAtlas, {64.0f, 288.0f, 64.0f, 64.0f},
-        114.5f, 1.1f);
 
     // Scarecrow atlas crop, placed in two different sections of the level.
     drawDecorationAtGround(
         mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        37.5f, 1.0f);
-    drawDecorationAtGround(
-        mDecorAtlas, {288.0f, 192.0f, 64.0f, 96.0f},
-        84.5f, 1.0f);
-
-    // Small debris is near the middle; the statue marks the far end.
-    drawDecorationAtGround(
-        mDecorAtlas, {32.0f, 224.0f, 64.0f, 32.0f},
-        57.5f, 1.0f);
+        84.5f, 1.0f, 50.0f);
 
     const Vector2 statuePosition = mLevelExit.getPosition();
     const float statueGroundY =
-                               statuePosition.y + mAngelStatue.height * LEVEL_C_STATUE_SCALE / 2.0f;
+        statuePosition.y + mAngelStatue.height * LEVEL_C_STATUE_SCALE / 2.0f;
     drawAtlasItemAtGround(
         mAngelStatue,
         {0.0f, 0.0f, static_cast<float>(mAngelStatue.width),
          static_cast<float>(mAngelStatue.height)},
-                               statuePosition.x,
-                               statueGroundY,
-                               LEVEL_C_STATUE_SCALE);
+        statuePosition.x,
+        statueGroundY,
+        LEVEL_C_STATUE_SCALE);
 
     renderWizard();
     mGameState.player->render();
@@ -514,67 +481,67 @@ void LevelC::updateWizard(float deltaTime)
     }
 
     mWizard->update(
-                               deltaTime,
-                               mGameState.player,
-                               nullptr,
-                               nullptr,
-                               0);
+        deltaTime,
+        mGameState.player,
+        nullptr,
+        nullptr,
+        0);
 
     const bool touchingPlayer = mGameState.player->collidesWith(mWizard);
     const bool isAttackAnimation =
-                               mWizardAnimation == WIZARD_ATTACK_ONE ||
-                               mWizardAnimation == WIZARD_ATTACK_TWO;
+        mWizardAnimation == WIZARD_ATTACK_ONE ||
+        mWizardAnimation == WIZARD_ATTACK_TWO;
 
     if (isAttackAnimation && !touchingPlayer)
-                               setWizardAnimation(getWizardMovementAnimation());
+        setWizardAnimation(getWizardMovementAnimation());
     else if (!isAttackAnimation && touchingPlayer)
     {
-                               setWizardAnimation(
-                                   mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
-                               mWizardAttackTwoNext = !mWizardAttackTwoNext;
+        setWizardAnimation(
+            mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
+        mWizardAttackTwoNext = !mWizardAttackTwoNext;
     }
 
     if (mWizardAnimation == WIZARD_ATTACK_ONE ||
-                               mWizardAnimation == WIZARD_ATTACK_TWO)
+        mWizardAnimation == WIZARD_ATTACK_TWO)
     {
-                               if (!mWizardAnimationFinished)
-                                   animateWizard(deltaTime);
+        if (!mWizardAnimationFinished)
+            animateWizard(deltaTime);
 
-                               if (mWizardAnimationFinished)
-                               {
-                                   if (touchingPlayer)
-                                   {
-                                       setWizardAnimation(
-                                           mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
-                                       mWizardAttackTwoNext = !mWizardAttackTwoNext;
-                                   }
-                                   else
-                                       setWizardAnimation(getWizardMovementAnimation());
-                               }
+        if (mWizardAnimationFinished)
+        {
+            if (touchingPlayer)
+            {
+                setWizardAnimation(
+                    mWizardAttackTwoNext ? WIZARD_ATTACK_TWO : WIZARD_ATTACK_ONE);
+                mWizardAttackTwoNext = !mWizardAttackTwoNext;
+            }
+            else
+                setWizardAnimation(getWizardMovementAnimation());
+        }
     }
     else
     {
-                               setWizardAnimation(getWizardMovementAnimation());
-                               animateWizard(deltaTime);
+        setWizardAnimation(getWizardMovementAnimation());
+        animateWizard(deltaTime);
     }
 
     if (touchingPlayer && !mWizardWasTouchingPlayer)
     {
-                               mWizardWasTouchingPlayer = true;
-                               if (mWizardDamageCooldown == 0.0f)
-                               {
-                                   loseLife();
-                                   mWizardDamageCooldown = LEVEL_C_WIZARD_DAMAGE_COOLDOWN;
-                               }
+        mWizardWasTouchingPlayer = true;
+        if (mWizardDamageCooldown == 0.0f)
+        {
+            loseLife();
+            mWizardDamageCooldown = LEVEL_C_WIZARD_DAMAGE_COOLDOWN;
+        }
     }
     else if (!touchingPlayer)
-                               mWizardWasTouchingPlayer = false;
+        mWizardWasTouchingPlayer = false;
 }
 
 void LevelC::setWizardAnimation(WizardAnimation animation)
 {
     if (mWizardAnimation == animation)
-                               return;
+        return;
 
     mWizardAnimation = animation;
     mWizardAnimationFrame = 0;
@@ -586,11 +553,11 @@ LevelC::WizardAnimation LevelC::getWizardMovementAnimation() const
 {
     const float verticalVelocity = mWizard->getVelocity().y;
     if (verticalVelocity < -1.0f)
-                               return WIZARD_JUMP;
+        return WIZARD_JUMP;
     if (verticalVelocity > 1.0f)
-                               return WIZARD_FALL;
+        return WIZARD_FALL;
     if (GetLength(mWizard->getMovement()) > 0.0f)
-                               return WIZARD_RUN;
+        return WIZARD_RUN;
 
     return WIZARD_IDLE;
 }
@@ -600,18 +567,18 @@ Texture2D LevelC::getWizardAnimationTexture() const
     switch (mWizardAnimation)
     {
     case WIZARD_RUN:
-                               return mWizardRun;
+        return mWizardRun;
     case WIZARD_JUMP:
-                               return mWizardJump;
+        return mWizardJump;
     case WIZARD_FALL:
-                               return mWizardFall;
+        return mWizardFall;
     case WIZARD_ATTACK_ONE:
-                               return mWizardAttackOne;
+        return mWizardAttackOne;
     case WIZARD_ATTACK_TWO:
-                               return mWizardAttackTwo;
+        return mWizardAttackTwo;
     case WIZARD_IDLE:
     default:
-                               return mWizardIdle;
+        return mWizardIdle;
     }
 }
 
@@ -620,22 +587,22 @@ void LevelC::animateWizard(float deltaTime)
     const Texture2D texture = getWizardAnimationTexture();
     const int frameCount = texture.width / texture.height;
     const float secondsPerFrame =
-                               1.0f / static_cast<float>(Entity::DEFAULT_FRAME_SPEED);
+        1.0f / static_cast<float>(Entity::DEFAULT_FRAME_SPEED);
 
     mWizardAnimationTime += deltaTime;
     while (mWizardAnimationTime >= secondsPerFrame)
     {
-                               mWizardAnimationTime -= secondsPerFrame;
-                               if (mWizardAnimationFrame + 1 < frameCount)
-                                   mWizardAnimationFrame++;
-                               else if (mWizardAnimation == WIZARD_ATTACK_ONE ||
-                                        mWizardAnimation == WIZARD_ATTACK_TWO)
-                               {
-                                   mWizardAnimationFinished = true;
-                                   break;
-                               }
-                               else
-                                   mWizardAnimationFrame = 0;
+        mWizardAnimationTime -= secondsPerFrame;
+        if (mWizardAnimationFrame + 1 < frameCount)
+            mWizardAnimationFrame++;
+        else if (mWizardAnimation == WIZARD_ATTACK_ONE ||
+                 mWizardAnimation == WIZARD_ATTACK_TWO)
+        {
+            mWizardAnimationFinished = true;
+            break;
+        }
+        else
+            mWizardAnimationFrame = 0;
     }
 }
 
@@ -644,27 +611,25 @@ void LevelC::renderWizard()
     const Texture2D texture = getWizardAnimationTexture();
     const int frameCount = texture.width / texture.height;
     Rectangle source = getUVRectangle(
-                               &texture,
-                               mWizardAnimationFrame,
-                               1,
-                               frameCount);
+        &texture,
+        mWizardAnimationFrame,
+        1,
+        frameCount);
     if (mWizard->getDirection() == LEFT)
-                               source.width *= -1.0f;
+        source.width *= -1.0f;
 
     const Vector2 position = mWizard->getPosition();
     const Vector2 size = mWizard->getScale();
     DrawTexturePro(
-                               texture,
-                               source,
-                               {
-                                   position.x - size.x / 2.0f,
-                                   position.y - size.y / 2.0f,
-                                   size.x,
-                                   size.y
-                               },
-                               {0.0f, 0.0f},
-                               0.0f,
-                               WHITE);
+        texture,
+        source,
+        {position.x - size.x / 2.0f,
+         position.y - size.y / 2.0f,
+         size.x,
+         size.y},
+        {0.0f, 0.0f},
+        0.0f,
+        WHITE);
 }
 
 float LevelC::getGroundYAtColumn(int column) const
@@ -685,14 +650,15 @@ void LevelC::drawDecorationAtGround(
     Texture2D texture,
     Rectangle source,
     float tileColumn,
-    float scale)
+    float scale,
+    float yOffset)
 {
     const float centerX =
         mGameState.map->getLeftBoundary() + tileColumn * LEVEL_C_TILE_SIZE;
     const int column = static_cast<int>(tileColumn);
     const float groundY = getGroundYAtColumn(column);
 
-    drawAtlasItemAtGround(texture, source, centerX, groundY, scale);
+    drawAtlasItemAtGround(texture, source, centerX, groundY + yOffset, scale);
 }
 
 void LevelC::renderSpikes()

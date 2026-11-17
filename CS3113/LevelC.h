@@ -83,7 +83,8 @@ private:
         Texture2D texture,
         Rectangle source,
         float tileColumn,
-        float scale);
+        float scale = 1.0f,
+        float yOffset = 0.0f);
     void renderSpikes();
     void renderHealthBar();
 };
